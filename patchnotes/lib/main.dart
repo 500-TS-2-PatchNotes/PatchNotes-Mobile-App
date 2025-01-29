@@ -153,6 +153,14 @@ class BacterialGrowthController {
   String _currentState = 'Healthy';
   Timer? _timer;
 
+  // ✅ Add StreamControllers
+  final _dataStreamController = StreamController<List<FlSpot>>.broadcast();
+  final _stateStreamController = StreamController<String>.broadcast();
+
+  // ✅ Expose the streams
+  Stream<List<FlSpot>> get dataStream => _dataStreamController.stream;
+  Stream<String> get stateStream => _stateStreamController.stream;
+
   List<FlSpot> get dataPoints => _dataPoints;
   String get currentState => _currentState;
 
@@ -162,13 +170,16 @@ class BacterialGrowthController {
       _dataPoints.add(FlSpot(_currentTime, randomGrowth));
       _currentTime += 1;
 
-      // Update the wound state dynamically
       _currentState = _getWoundState(randomGrowth);
 
-      // Limit the x-axis range to 30 seconds
+      // Limit x-axis range to 30 seconds
       if (_dataPoints.length > 30) {
         _dataPoints.removeAt(0);
       }
+
+      // ✅ Send updates to listeners
+      _dataStreamController.add(List.from(_dataPoints));
+      _stateStreamController.add(_currentState);
     });
   }
 
@@ -182,8 +193,11 @@ class BacterialGrowthController {
 
   void dispose() {
     _timer?.cancel();
+    _dataStreamController.close();
+    _stateStreamController.close();
   }
 }
+
 
 class DashboardPage extends StatelessWidget {
   final Function(int) onNavigate;
@@ -197,81 +211,88 @@ class DashboardPage extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          margin: const EdgeInsets.only(bottom: 10),
-          decoration: BoxDecoration(
-            color: _getStateBackgroundColor(controller.currentState),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            controller.currentState,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: controller.currentState == 'Observation'
-                  ? Colors.black
-                  : Colors.white,
-            ),
-          ),
+        StreamBuilder<String>(
+          stream: controller.stateStream,
+          initialData: controller.currentState,
+          builder: (context, snapshot) {
+            String state = snapshot.data ?? 'Healthy';
+            return Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              margin: const EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(
+                color: _getStateBackgroundColor(state),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                state,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: state == 'Observation' ? Colors.black : Colors.white,
+                ),
+              ),
+            );
+          },
         ),
         const SizedBox(height: 10),
         SizedBox(
           height: 250, // Graph height
-          child: LineChart(
-            LineChartData(
-              gridData: FlGridData(show: true),
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    interval: 10,
-                    getTitlesWidget: (value, _) => Text(
-                      '${value.toInt()} CFU',
-                      style: const TextStyle(fontSize: 12),
+          child: StreamBuilder<List<FlSpot>>(
+            stream: controller.dataStream,
+            initialData: controller.dataPoints,
+            builder: (context, snapshot) {
+              return LineChart(
+                LineChartData(
+                  gridData: FlGridData(show: true),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 10,
+                        getTitlesWidget: (value, _) => Text(
+                          '${value.toInt()} CFU',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 5,
+                        getTitlesWidget: (value, _) => Text(
+                          '${value.toInt()}s',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
-                ),
-                rightTitles: AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    interval: 5,
-                    getTitlesWidget: (value, _) => Text(
-                      '${value.toInt()}s',
-                      style: const TextStyle(fontSize: 12),
+                  minX: snapshot.data!.isNotEmpty ? snapshot.data!.first.x : 0,
+                  maxX: snapshot.data!.isNotEmpty ? snapshot.data!.last.x + 30 : 30,
+                  minY: 0,
+                  maxY: 50,
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: snapshot.data ?? [],
+                      isCurved: true,
+                      gradient: LinearGradient(
+                        colors: [Colors.blue, Colors.green],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                      barWidth: 3,
+                      belowBarData: BarAreaData(show: false),
+                      dotData: FlDotData(show: false),
                     ),
-                  ),
+                  ],
                 ),
-                topTitles: AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-              ),
-              minX: controller.dataPoints.isNotEmpty
-                  ? controller.dataPoints.first.x
-                  : 0,
-              maxX: controller.dataPoints.isNotEmpty
-                  ? controller.dataPoints.first.x + 30
-                  : 30,
-              minY: 0,
-              maxY: 50,
-              lineBarsData: [
-                LineChartBarData(
-                  spots: controller.dataPoints,
-                  isCurved: true,
-                  gradient: LinearGradient(
-                    colors: [Colors.blue, Colors.green],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                  barWidth: 3,
-                  belowBarData: BarAreaData(show: false),
-                  dotData: FlDotData(show: false),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         ),
         const SizedBox(height: 20),
@@ -285,8 +306,7 @@ class DashboardPage extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF59ADC8),
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -304,8 +324,7 @@ class DashboardPage extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF59ADC8),
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -327,8 +346,7 @@ class DashboardPage extends StatelessWidget {
   Color _getStateBackgroundColor(String state) {
     switch (state) {
       case 'Healthy':
-        return const Color(0xFFC8E6C9)
-            .withOpacity(0.8); // Soft green (light mint)
+        return const Color(0xFFC8E6C9).withOpacity(0.8); // Soft green (light mint)
       case 'Observation':
         return const Color(0xFFFFF9C4).withOpacity(0.8); // Light pastel yellow
       case 'Early Infection':
@@ -342,6 +360,7 @@ class DashboardPage extends StatelessWidget {
     }
   }
 }
+
 
 class InsightsPage extends StatelessWidget {
   final String currentState;
