@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'login.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,7 +13,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       title: 'Patch Notes',
       home: MainScreen(),
     );
@@ -60,7 +61,7 @@ class _MainScreenState extends State<MainScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xFF967BB6),
+        backgroundColor: const Color(0xFF967BB6),
         title: Text(
           _titles[_currentIndex],
           style: const TextStyle(
@@ -153,11 +154,11 @@ class BacterialGrowthController {
   String _currentState = 'Healthy';
   Timer? _timer;
 
-  // ✅ Add StreamControllers
+  // Add StreamControllers
   final _dataStreamController = StreamController<List<FlSpot>>.broadcast();
   final _stateStreamController = StreamController<String>.broadcast();
 
-  // ✅ Expose the streams
+  // Expose the streams
   Stream<List<FlSpot>> get dataStream => _dataStreamController.stream;
   Stream<String> get stateStream => _stateStreamController.stream;
 
@@ -177,7 +178,7 @@ class BacterialGrowthController {
         _dataPoints.removeAt(0);
       }
 
-      // ✅ Send updates to listeners
+      // Send updates to listeners
       _dataStreamController.add(List.from(_dataPoints));
       _stateStreamController.add(_currentState);
     });
@@ -197,7 +198,6 @@ class BacterialGrowthController {
     _stateStreamController.close();
   }
 }
-
 
 class DashboardPage extends StatelessWidget {
   final Function(int) onNavigate;
@@ -243,7 +243,7 @@ class DashboardPage extends StatelessWidget {
             builder: (context, snapshot) {
               return LineChart(
                 LineChartData(
-                  gridData: FlGridData(show: true),
+                  gridData: const FlGridData(show: true),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
@@ -255,7 +255,7 @@ class DashboardPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    rightTitles: AxisTitles(
+                    rightTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false),
                     ),
                     bottomTitles: AxisTitles(
@@ -268,26 +268,28 @@ class DashboardPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    topTitles: AxisTitles(
+                    topTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
                   minX: snapshot.data!.isNotEmpty ? snapshot.data!.first.x : 0,
-                  maxX: snapshot.data!.isNotEmpty ? snapshot.data!.last.x + 30 : 30,
+                  maxX: snapshot.data!.isNotEmpty
+                      ? snapshot.data!.last.x + 30
+                      : 30,
                   minY: 0,
                   maxY: 50,
                   lineBarsData: [
                     LineChartBarData(
                       spots: snapshot.data ?? [],
                       isCurved: true,
-                      gradient: LinearGradient(
+                      gradient: const LinearGradient(
                         colors: [Colors.blue, Colors.green],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),
                       barWidth: 3,
                       belowBarData: BarAreaData(show: false),
-                      dotData: FlDotData(show: false),
+                      dotData: const FlDotData(show: false),
                     ),
                   ],
                 ),
@@ -306,7 +308,8 @@ class DashboardPage extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF59ADC8),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -324,7 +327,8 @@ class DashboardPage extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF59ADC8),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -346,7 +350,8 @@ class DashboardPage extends StatelessWidget {
   Color _getStateBackgroundColor(String state) {
     switch (state) {
       case 'Healthy':
-        return const Color(0xFFC8E6C9).withOpacity(0.8); // Soft green (light mint)
+        return const Color(0xFFC8E6C9)
+            .withOpacity(0.8); // Soft green (light mint)
       case 'Observation':
         return const Color(0xFFFFF9C4).withOpacity(0.8); // Light pastel yellow
       case 'Early Infection':
@@ -361,12 +366,11 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-
 class InsightsPage extends StatelessWidget {
   final String currentState;
   final DateTime lastSynced;
 
-  InsightsPage(
+  const InsightsPage(
       {required this.currentState, required this.lastSynced, super.key});
 
   String _getStatusMessage(String state) {
@@ -416,7 +420,7 @@ class InsightsPage extends StatelessWidget {
         // Status Message
         Container(
           padding: const EdgeInsets.all(16),
-          color: Color(0xFFE6E6FA),
+          color: const Color(0xFFE6E6FA),
           child: Text(
             _getStatusMessage(currentState),
             style: const TextStyle(
