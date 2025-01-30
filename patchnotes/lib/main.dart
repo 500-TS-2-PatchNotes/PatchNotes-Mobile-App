@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       title: 'Patch Notes',
-      home: MainScreen(),
+      home: AuthPageMobile(),
     );
   }
 }
@@ -56,7 +56,46 @@ class _MainScreenState extends State<MainScreen> {
           child: Text('Notifications Page', style: TextStyle(fontSize: 24))),
       const Center(
           child: Text('Settings Page', style: TextStyle(fontSize: 24))),
-      const Center(child: Text('Profile Page', style: TextStyle(fontSize: 24))),
+      Column(
+        children: [
+          const SizedBox(height: 10), // Space below AppBar
+          Align(
+            alignment: Alignment.centerLeft, // Aligns the button to the left
+            child: Padding(
+              padding:
+                  const EdgeInsets.only(left: 16), // Left margin for alignment
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            const AuthPageMobile()), // Navigate back to login
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent, // Red sign-out button
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text('Sign Out', style: TextStyle(fontSize: 16)),
+              ),
+            ),
+          ),
+          const Spacer(), // Pushes the profile text to the center
+          const Center(
+            child: Text(
+              'Profile Page',
+              style: TextStyle(fontSize: 24),
+            ),
+          ),
+          const Spacer(), // Keeps the profile text centered
+        ],
+      ),
     ];
 
     return Scaffold(

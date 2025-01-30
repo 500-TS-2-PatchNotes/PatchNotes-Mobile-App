@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'main.dart';
 
 class AuthPageMobile extends StatefulWidget {
   const AuthPageMobile({super.key});
@@ -18,7 +19,9 @@ class _AuthPageMobileState extends State<AuthPageMobile> {
 
   @override
   Widget build(BuildContext context) {
-    return _isLogin ? LoginPageMobile(togglePage: _togglePage) : RegisterPageMobile(togglePage: _togglePage);
+    return _isLogin
+        ? LoginPageMobile(togglePage: _togglePage)
+        : RegisterPageMobile(togglePage: _togglePage);
   }
 }
 
@@ -39,13 +42,16 @@ class LoginPageMobile extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag, // Dismiss keyboard on scroll
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior
+                  .onDrag, // Dismiss keyboard on scroll
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.08),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    SizedBox(height: screenHeight * 0.08), // Adjusted dynamic spacing
+                    SizedBox(
+                        height:
+                            screenHeight * 0.08), // Adjusted dynamic spacing
 
                     // Login Title
                     Text(
@@ -68,7 +74,8 @@ class LoginPageMobile extends StatelessWidget {
 
                     // Username Field
                     Padding(
-                      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.01),
+                      padding:
+                          EdgeInsets.symmetric(vertical: screenHeight * 0.01),
                       child: TextField(
                         decoration: InputDecoration(
                           filled: true,
@@ -88,7 +95,8 @@ class LoginPageMobile extends StatelessWidget {
 
                     // Password Field
                     Padding(
-                      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.01),
+                      padding:
+                          EdgeInsets.symmetric(vertical: screenHeight * 0.01),
                       child: TextField(
                         obscureText: true,
                         decoration: InputDecoration(
@@ -115,9 +123,16 @@ class LoginPageMobile extends StatelessWidget {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF9696D9),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
                         ),
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const MainScreen()),
+                          );
+                        },
                         child: Text(
                           'Login',
                           style: TextStyle(
@@ -153,7 +168,9 @@ class LoginPageMobile extends StatelessWidget {
                       ),
                     ),
 
-                    SizedBox(height: screenHeight * 0.06), // Reduced bottom spacing for small screens
+                    SizedBox(
+                        height: screenHeight *
+                            0.06), // Reduced bottom spacing for small screens
                   ],
                 ),
               ),
@@ -185,14 +202,20 @@ class RegisterPageMobile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(height: screenHeight * 0.08),
-              Text('Register', style: TextStyle(color: Color(0xFF967BB6), fontSize: textSize * 1.2, fontWeight: FontWeight.bold)),
+              Text('Register',
+                  style: TextStyle(
+                      color: Color(0xFF967BB6),
+                      fontSize: textSize * 1.2,
+                      fontWeight: FontWeight.bold)),
               SizedBox(height: screenHeight * 0.04),
               TextField(
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Color(0xFFEDF2F7),
                   hintText: 'Username',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none),
                 ),
               ),
               SizedBox(height: screenHeight * 0.02),
@@ -201,7 +224,9 @@ class RegisterPageMobile extends StatelessWidget {
                   filled: true,
                   fillColor: Color(0xFFEDF2F7),
                   hintText: 'Email',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none),
                 ),
               ),
               SizedBox(height: screenHeight * 0.02),
@@ -211,7 +236,9 @@ class RegisterPageMobile extends StatelessWidget {
                   filled: true,
                   fillColor: Color(0xFFEDF2F7),
                   hintText: 'Password',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none),
                 ),
               ),
               SizedBox(height: screenHeight * 0.03),
@@ -219,12 +246,32 @@ class RegisterPageMobile extends StatelessWidget {
                 width: double.infinity,
                 height: inputHeight,
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF9696D9), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                  onPressed: () {},
-                  child: Text('Register', style: TextStyle(color: Colors.white, fontSize: textSize)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF9696D9),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              const MainScreen()), // Navigate to MainScreen
+                    );
+                  },
+                  child: Text(
+                    'Register',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: textSize,
+                    ),
+                  ),
                 ),
               ),
-              TextButton(onPressed: togglePage, child: Text('Already have an account? Login', style: TextStyle(fontSize: textSize * 0.7))),
+              TextButton(
+                  onPressed: togglePage,
+                  child: Text('Already have an account? Login',
+                      style: TextStyle(fontSize: textSize * 0.7))),
             ],
           ),
         ),
@@ -232,4 +279,3 @@ class RegisterPageMobile extends StatelessWidget {
     );
   }
 }
-
