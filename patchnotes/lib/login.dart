@@ -212,10 +212,11 @@ class RegisterPageMobile extends StatelessWidget {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Color(0xFFEDF2F7),
-                  hintText: 'Username',
+                  hintText: 'First Name',
                   border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none),
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
               SizedBox(height: screenHeight * 0.02),
@@ -223,7 +224,19 @@ class RegisterPageMobile extends StatelessWidget {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Color(0xFFEDF2F7),
-                  hintText: 'Email',
+                  hintText: 'Last Name',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              SizedBox(height: screenHeight * 0.02),
+              TextField(
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Color(0xFFEDF2F7),
+                  hintText: "Email (Username)",
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none),
