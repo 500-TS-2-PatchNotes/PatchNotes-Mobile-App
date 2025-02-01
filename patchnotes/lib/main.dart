@@ -7,8 +7,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:patchnotes/testImage.dart';
 import 'firebase_options.dart';
 import 'login.dart';
+import 'notifications.dart';
 
 //Image Storage
 final storage = FirebaseStorage
@@ -70,8 +72,7 @@ class _MainScreenState extends State<MainScreen> {
         currentState: BacterialGrowthController().currentState,
         lastSynced: DateTime.now(),
       ),
-      const Center(
-          child: Text('Notifications Page', style: TextStyle(fontSize: 24))),
+      const NotificationsPage(),
       const Center(
           child: Text('Settings Page', style: TextStyle(fontSize: 24))),
       Column(
@@ -440,8 +441,11 @@ class InsightsPage extends StatelessWidget {
   final String currentState;
   final DateTime lastSynced;
 
-  const InsightsPage(
-      {required this.currentState, required this.lastSynced, super.key});
+  const InsightsPage({
+    required this.currentState,
+    required this.lastSynced,
+    super.key,
+  });
 
   String _getStatusMessage(String state) {
     switch (state) {
@@ -479,100 +483,106 @@ class InsightsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<Image> woundImages = List.generate(
-      10,
-      (index) => Image.asset('assets/wound_sample.png', fit: BoxFit.cover),
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Status Message
-        Container(
-          padding: const EdgeInsets.all(16),
-          color: const Color(0xFFE6E6FA),
-          child: Text(
-            _getStatusMessage(currentState),
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-
-        // Title for Most Recent Wound Images
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Most Recent Wound Images',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-        const SizedBox(height: 10),
-
-        // Grid of Wound Images
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 5, // 5 columns
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-            ),
-            itemCount: woundImages.length,
-            itemBuilder: (context, index) => Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: woundImages[index],
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Tip Section
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Container(
-            padding: const EdgeInsets.all(16),
+    return SingleChildScrollView(
+      // Ensures everything scrolls if the vertical space is insufficient.
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Status Section
+          Container(
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              color: const Color(0xFFE6E6FA),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              _getTip(currentState),
+              _getStatusMessage(currentState),
               style: const TextStyle(
-                fontSize: 16,
-                fontStyle: FontStyle.italic,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Wound Images Section Title
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              'Most Recent Wound Images',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Grid of Wound Images using RandomWoundImageWidget
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 6, 
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2, 
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.2,
+              ),
+              itemBuilder: (context, index) {
+                return Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade400),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const RandomWoundImageWidget(),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Tip Section
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                _getTip(currentState),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontStyle: FontStyle.italic,
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 10),
+          const SizedBox(height: 24),
 
-        // Last Synced
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Last synced: ${_formatDateTime(lastSynced)}',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
+          // Last Synced Section
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              'Last synced: ${_formatDateTime(lastSynced)}',
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              textAlign: TextAlign.center,
             ),
           ),
-        ),
-      ],
+          const SizedBox(height: 24),
+        ],
+      ),
     );
   }
 
   String _formatDateTime(DateTime dateTime) {
-    return '${_formatMonth(dateTime.month)} ${dateTime.day}, ${dateTime.year}, '
-        '${_formatTime(dateTime)}';
+    return '${_formatMonth(dateTime.month)} ${dateTime.day}, ${dateTime.year}, ${_formatTime(dateTime)}';
   }
 
   String _formatMonth(int month) {
