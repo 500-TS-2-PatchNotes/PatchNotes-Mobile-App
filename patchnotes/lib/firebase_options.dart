@@ -63,6 +63,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '226028779054',
     projectId: 'patchnotes-d3b06',
     storageBucket: 'patchnotes-d3b06.firebasestorage.app',
+    iosClientId: '226028779054-t3j9j3msr2s7io8mcg5cn02cu7cm83ir.apps.googleusercontent.com',
     iosBundleId: 'com.example.patchnotes',
   );
 

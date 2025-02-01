@@ -1,33 +1,21 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'register.dart';
 import 'main.dart';
 
-class AuthPageMobile extends StatefulWidget {
-  const AuthPageMobile({super.key});
+class LoginPageMobile extends StatefulWidget {
+  const LoginPageMobile({super.key});
 
   @override
-  _AuthPageMobileState createState() => _AuthPageMobileState();
+  _LoginPageMobileState createState() => _LoginPageMobileState();
 }
 
-class _AuthPageMobileState extends State<AuthPageMobile> {
-  bool _isLogin = true;
+class _LoginPageMobileState extends State<LoginPageMobile> {
+  final _formKey = GlobalKey<FormState>();
 
-  void _togglePage() {
-    setState(() {
-      _isLogin = !_isLogin;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return _isLogin
-        ? LoginPageMobile(togglePage: _togglePage)
-        : RegisterPageMobile(togglePage: _togglePage);
-  }
-}
-
-class LoginPageMobile extends StatelessWidget {
-  final VoidCallback togglePage;
-  const LoginPageMobile({super.key, required this.togglePage});
+  final TextEditingController email = TextEditingController();
+  final TextEditingController password = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -45,248 +33,194 @@ class LoginPageMobile extends StatelessWidget {
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior
                   .onDrag, // Dismiss keyboard on scroll
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.08),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                        height:
-                            screenHeight * 0.08), // Adjusted dynamic spacing
+                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.08),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                            height: screenHeight *
+                                0.08), // Adjusted dynamic spacing
 
-                    // Login Title
-                    Text(
-                      'Login',
-                      style: TextStyle(
-                        color: const Color(0xFF967BB6),
-                        fontSize: textSize * 1.2,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: screenHeight * 0.01),
-                    Text(
-                      'Sign in to your account',
-                      style: TextStyle(
-                        color: const Color(0xFF4A5568),
-                        fontSize: textSize * 0.7,
-                      ),
-                    ),
-                    SizedBox(height: screenHeight * 0.04),
-
-                    // Username Field
-                    Padding(
-                      padding:
-                          EdgeInsets.symmetric(vertical: screenHeight * 0.01),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: const Color(0xFFEDF2F7),
-                          hintText: 'Username',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                            vertical: inputHeight * 0.3,
-                            horizontal: screenWidth * 0.04,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Password Field
-                    Padding(
-                      padding:
-                          EdgeInsets.symmetric(vertical: screenHeight * 0.01),
-                      child: TextField(
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: const Color(0xFFEDF2F7),
-                          hintText: 'Password',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                            vertical: inputHeight * 0.3,
-                            horizontal: screenWidth * 0.04,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: screenHeight * 0.03),
-
-                    // Login Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: inputHeight,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF9696D9),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ),
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const MainScreen()),
-                          );
-                        },
-                        child: Text(
+                        // Login Title
+                        Text(
                           'Login',
                           style: TextStyle(
-                            color: Colors.white,
-                            fontSize: textSize,
+                            color: const Color(0xFF967BB6),
+                            fontSize: textSize * 1.2,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                    ),
-                    SizedBox(height: screenHeight * 0.02),
-
-                    // Forgot Password
-                    TextButton(
-                      onPressed: () {},
-                      child: Text(
-                        'Forgot Password?',
-                        style: TextStyle(
-                          color: const Color(0xFF4A5568),
-                          fontSize: textSize * 0.7,
+                        SizedBox(height: screenHeight * 0.01),
+                        Text(
+                          'Sign in to your account',
+                          style: TextStyle(
+                            color: const Color(0xFF4A5568),
+                            fontSize: textSize * 0.7,
+                          ),
                         ),
-                      ),
-                    ),
+                        SizedBox(height: screenHeight * 0.04),
 
-                    // Register New Account
-                    TextButton(
-                      onPressed: togglePage,
-                      child: Text(
-                        'Register New Account',
-                        style: TextStyle(
-                          color: const Color(0xFF4A5568),
-                          fontSize: textSize * 0.7,
+                        // Username Field
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              vertical: screenHeight * 0.01),
+                          child: TextFormField(
+                            controller: email,
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: const Color(0xFFEDF2F7),
+                              hintText: 'Username',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: inputHeight * 0.3,
+                                horizontal: screenWidth * 0.04,
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Please enter your email";
+                              }
+                              if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+                                return 'Please enter a valid email';
+                              }
+                              return null;
+                            },
+                          ),
                         ),
-                      ),
-                    ),
 
-                    SizedBox(
-                        height: screenHeight *
-                            0.06), // Reduced bottom spacing for small screens
-                  ],
-                ),
-              ),
+                        // Password Field
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              vertical: screenHeight * 0.01),
+                          child: TextFormField(
+                            controller: password,
+                            obscureText: true,
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: const Color(0xFFEDF2F7),
+                              hintText: 'Password',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: inputHeight * 0.3,
+                                horizontal: screenWidth * 0.04,
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your password';
+                              }
+                              if (value.length < 6) {
+                                return 'Password must be at least 6 characters';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        SizedBox(height: screenHeight * 0.03),
+
+                        // Login Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: inputHeight,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF9696D9),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                            onPressed: () async {
+                              String message = '';
+                              if (_formKey.currentState!.validate()) {
+                                try {
+                                  await FirebaseAuth.instance
+                                      .signInWithEmailAndPassword(
+                                    email: email.text.trim(),
+                                    password: password.text.trim(),
+                                  );
+                                  Future.delayed(const Duration(seconds: 1),
+                                      () {
+                                    print('success');
+                                    Navigator.of(context, rootNavigator: true)
+                                        .push(
+                                      MaterialPageRoute(
+                                        builder: (context) => const MainScreen(),
+                                      ),
+                                    );
+                                  });
+                                } on FirebaseAuthException catch (e) {
+                                  if (e.code == 'INVALID_LOGIN_CREDENTIALS') {
+                                    message = 'Invalid login credentials.';
+                                  } else {
+                                    message = e.code;
+                                  }
+                                  Fluttertoast.showToast(
+                                    msg: message,
+                                    toastLength: Toast.LENGTH_LONG,
+                                    gravity: ToastGravity.SNACKBAR,
+                                    backgroundColor: Colors.black54,
+                                    textColor: Colors.white,
+                                    fontSize: 14.0,
+                                  );
+                                }
+                              }
+                            },
+                            child: Text(
+                              'Login',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: textSize,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: screenHeight * 0.02),
+
+                        // Forgot Password
+                        TextButton(
+                          onPressed: () {},
+                          child: Text(
+                            'Forgot Password?',
+                            style: TextStyle(
+                              color: const Color(0xFF4A5568),
+                              fontSize: textSize * 0.7,
+                            ),
+                          ),
+                        ),
+
+                        // Register New Account
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const RegisterPageMobile()));
+                          },
+                          child: Text(
+                            'Register New Account',
+                            style: TextStyle(
+                              color: const Color(0xFF4A5568),
+                              fontSize: textSize * 0.7,
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(
+                            height: screenHeight *
+                                0.06), // Reduced bottom spacing for small screens
+                      ],
+                    ),
+                  )),
             );
           },
-        ),
-      ),
-    );
-  }
-}
-
-class RegisterPageMobile extends StatelessWidget {
-  final VoidCallback togglePage;
-  const RegisterPageMobile({super.key, required this.togglePage});
-
-  @override
-  Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
-    final double screenHeight = MediaQuery.of(context).size.height;
-    final double textSize = screenWidth * 0.05;
-    final double inputHeight = screenHeight * 0.065;
-
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.08),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(height: screenHeight * 0.08),
-              Text('Register',
-                  style: TextStyle(
-                      color: Color(0xFF967BB6),
-                      fontSize: textSize * 1.2,
-                      fontWeight: FontWeight.bold)),
-              SizedBox(height: screenHeight * 0.04),
-              TextField(
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Color(0xFFEDF2F7),
-                  hintText: 'First Name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              SizedBox(height: screenHeight * 0.02),
-              TextField(
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Color(0xFFEDF2F7),
-                  hintText: 'Last Name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              SizedBox(height: screenHeight * 0.02),
-              TextField(
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Color(0xFFEDF2F7),
-                  hintText: "Email (Username)",
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none),
-                ),
-              ),
-              SizedBox(height: screenHeight * 0.02),
-              TextField(
-                obscureText: true,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Color(0xFFEDF2F7),
-                  hintText: 'Password',
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none),
-                ),
-              ),
-              SizedBox(height: screenHeight * 0.03),
-              SizedBox(
-                width: double.infinity,
-                height: inputHeight,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF9696D9),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                  ),
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              const MainScreen()), // Navigate to MainScreen
-                    );
-                  },
-                  child: Text(
-                    'Register',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: textSize,
-                    ),
-                  ),
-                ),
-              ),
-              TextButton(
-                  onPressed: togglePage,
-                  child: Text('Already have an account? Login',
-                      style: TextStyle(fontSize: textSize * 0.7))),
-            ],
-          ),
         ),
       ),
     );

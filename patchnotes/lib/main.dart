@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'firebase_options.dart';
 import 'login.dart';
 
@@ -31,7 +33,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       title: 'Patch Notes',
-      home: AuthPageMobile(),
+      home: LoginPageMobile(),
     );
   }
 }
@@ -81,13 +83,26 @@ class _MainScreenState extends State<MainScreen> {
               padding:
                   const EdgeInsets.only(left: 16), // Left margin for alignment
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            const AuthPageMobile()), // Navigate back to login
-                  );
+                onPressed: () async {
+                  try {
+                    await FirebaseAuth.instance.signOut();
+                    Future.delayed(const Duration(seconds: 1), () {
+                      Navigator.of(context, rootNavigator: true).push(
+                        MaterialPageRoute(
+                          builder: (_) => const LoginPageMobile(),
+                        ),
+                      );
+                    });
+                  } on Exception catch (e) {
+                    Fluttertoast.showToast(
+                      msg: e.toString(),
+                      toastLength: Toast.LENGTH_LONG,
+                      gravity: ToastGravity.SNACKBAR,
+                      backgroundColor: Colors.black54,
+                      textColor: Colors.white,
+                      fontSize: 14.0,
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.redAccent, // Red sign-out button
