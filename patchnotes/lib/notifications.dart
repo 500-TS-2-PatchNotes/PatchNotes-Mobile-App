@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class NotificationsPage extends StatefulWidget {
-  const NotificationsPage({Key? key}) : super(key: key);
+  const NotificationsPage({super.key});
 
   @override
   State<NotificationsPage> createState() => _NotificationsPageState();
@@ -32,7 +32,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       notifications.removeAt(index);
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Notification dismissed')),
+      const SnackBar(content: Text('Notification dismissed')),
     );
   }
 

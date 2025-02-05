@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 Future<String> fetchRandomWoundImageUrl() async {
-  final url = 'https://pixabay.com/api/?key=48579109-a201c59c99800927d9b9bdeb4&q=wound&image_type=photo&per_page=50';
+  const url = 'https://pixabay.com/api/?key=48579109-a201c59c99800927d9b9bdeb4&q=wound&image_type=photo&per_page=50';
   final response = await http.get(Uri.parse(url));
   
   if (response.statusCode == 200) {
@@ -23,7 +23,7 @@ Future<String> fetchRandomWoundImageUrl() async {
 }
 
 class RandomWoundImageWidget extends StatelessWidget {
-  const RandomWoundImageWidget({Key? key}) : super(key: key);
+  const RandomWoundImageWidget({super.key});
 
   @override
   Widget build(BuildContext context) {

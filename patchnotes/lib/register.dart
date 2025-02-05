@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'login.dart';
-import 'main.dart';
 
 class RegisterPageMobile extends StatefulWidget {
   const RegisterPageMobile({super.key});
@@ -38,14 +37,14 @@ class _RegisterPageMobileState extends State<RegisterPageMobile> {
                 SizedBox(height: screenHeight * 0.08),
                 Text('Register',
                     style: TextStyle(
-                        color: Color(0xFF967BB6),
+                        color: const Color(0xFF967BB6),
                         fontSize: textSize * 1.2,
                         fontWeight: FontWeight.bold)),
                 SizedBox(height: screenHeight * 0.04),
                 TextField(
                   decoration: InputDecoration(
                     filled: true,
-                    fillColor: Color(0xFFEDF2F7),
+                    fillColor: const Color(0xFFEDF2F7),
                     hintText: 'First Name',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -57,7 +56,7 @@ class _RegisterPageMobileState extends State<RegisterPageMobile> {
                 TextField(
                   decoration: InputDecoration(
                     filled: true,
-                    fillColor: Color(0xFFEDF2F7),
+                    fillColor: const Color(0xFFEDF2F7),
                     hintText: 'Last Name',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
