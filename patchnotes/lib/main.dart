@@ -64,8 +64,8 @@ class _MainScreenState extends State<MainScreen> {
     'Dashboard',
     'Insights',
     'Notifications',
-    'Settings',
     'Profile',
+    'Settings'
   ];
 
   @override
