@@ -11,6 +11,7 @@ import 'package:patchnotes/testImage.dart';
 import 'firebase_options.dart';
 import 'login.dart';
 import 'notifications.dart';
+import 'profile.dart';
 
 //Image Storage
 final storage = FirebaseStorage
@@ -75,64 +76,13 @@ class _MainScreenState extends State<MainScreen> {
       const NotificationsPage(),
       const Center(
           child: Text('Settings Page', style: TextStyle(fontSize: 24))),
-      Column(
-        children: [
-          const SizedBox(height: 10), // Space below AppBar
-          Align(
-            alignment: Alignment.centerLeft, // Aligns the button to the left
-            child: Padding(
-              padding:
-                  const EdgeInsets.only(left: 16), // Left margin for alignment
-              child: ElevatedButton(
-                onPressed: () async {
-                  try {
-                    await FirebaseAuth.instance.signOut();
-                    Future.delayed(const Duration(seconds: 1), () {
-                      Navigator.of(context, rootNavigator: true).push(
-                        MaterialPageRoute(
-                          builder: (_) => const LoginPageMobile(),
-                        ),
-                      );
-                    });
-                  } on Exception catch (e) {
-                    Fluttertoast.showToast(
-                      msg: e.toString(),
-                      toastLength: Toast.LENGTH_LONG,
-                      gravity: ToastGravity.SNACKBAR,
-                      backgroundColor: Colors.black54,
-                      textColor: Colors.white,
-                      fontSize: 14.0,
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent, // Red sign-out button
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text('Sign Out', style: TextStyle(fontSize: 16)),
-              ),
-            ),
-          ),
-          const Spacer(), // Pushes the profile text to the center
-          const Center(
-            child: Text(
-              'Profile Page',
-              style: TextStyle(fontSize: 24),
-            ),
-          ),
-          const Spacer(), // Keeps the profile text centered
-        ],
-      ),
+      ProfilePage()
     ];
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF967BB6),
+        automaticallyImplyLeading: false,
         title: Text(
           _titles[_currentIndex],
           style: const TextStyle(
