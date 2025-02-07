@@ -4,7 +4,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'login.dart';
 
 class RegisterPageMobile extends StatefulWidget {
-  const RegisterPageMobile({super.key});
+  RegisterPageMobile({super.key});
 
   @override
   _RegisterPageMobileState createState() => _RegisterPageMobileState();
@@ -130,7 +130,7 @@ class _RegisterPageMobileState extends State<RegisterPageMobile> {
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const LoginPageMobile(),
+                                builder: (_) => LoginPageMobile(),
                               ),
                             );
                           });
@@ -175,7 +175,7 @@ class _RegisterPageMobileState extends State<RegisterPageMobile> {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const LoginPageMobile()));
+                              builder: (context) => LoginPageMobile()));
                     },
                     child: Text('Already have an account? Login',
                         style: TextStyle(fontSize: textSize * 0.7))),

@@ -1,11 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:patchnotes/mainscreen.dart';
 import 'register.dart';
-import 'main.dart';
 
 class LoginPageMobile extends StatefulWidget {
-  const LoginPageMobile({super.key});
+  LoginPageMobile({super.key});
 
   @override
   _LoginPageMobileState createState() => _LoginPageMobileState();
@@ -21,8 +21,8 @@ class _LoginPageMobileState extends State<LoginPageMobile> {
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
-    final double textSize = screenWidth * 0.05; // Dynamically scale font size
-    final double inputHeight = screenHeight * 0.065; // Adjust input box height
+    final double textSize = screenWidth * 0.05; // This will dynamically scale text size based on mobile screen size
+    final double inputHeight = screenHeight * 0.065; // Also dynamically adjusts the input box's height
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -31,7 +31,7 @@ class _LoginPageMobileState extends State<LoginPageMobile> {
           builder: (context, constraints) {
             return SingleChildScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior
-                  .onDrag, // Dismiss keyboard on scroll
+                  .onDrag, // This will dismiss the keyboard when scrolling
               child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.08),
                   child: Form(
@@ -41,7 +41,7 @@ class _LoginPageMobileState extends State<LoginPageMobile> {
                       children: [
                         SizedBox(
                             height: screenHeight *
-                                0.08), // Adjusted dynamic spacing
+                                0.08), // This will dynamically adjust the spacing
 
                         // Login Title
                         Text(
@@ -151,7 +151,7 @@ class _LoginPageMobileState extends State<LoginPageMobile> {
                                     Navigator.of(context, rootNavigator: true)
                                         .push(
                                       MaterialPageRoute(
-                                        builder: (context) => const MainScreen(),
+                                        builder: (context) => MainScreen(key: mainScreenKey),
                                       ),
                                     );
                                   });
@@ -202,7 +202,7 @@ class _LoginPageMobileState extends State<LoginPageMobile> {
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) =>
-                                        const RegisterPageMobile()));
+                                        RegisterPageMobile()));
                           },
                           child: Text(
                             'Register New Account',

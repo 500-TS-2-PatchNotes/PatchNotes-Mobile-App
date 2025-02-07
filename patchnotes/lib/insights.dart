@@ -1,15 +1,14 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:patchnotes/dashboard.dart';
 import 'package:patchnotes/testImage.dart';
 
-class InsightsPage extends StatefulWidget {
-  final String initialState;
-  final DateTime initialLastSynced;
+import 'header.dart';
 
-  const InsightsPage({
-    required this.initialState,
-    required this.initialLastSynced,
-    super.key,
-  });
+class InsightsPage extends StatefulWidget {
+  final BacterialGrowthController controller;
+
+  InsightsPage({required this.controller, super.key});
 
   @override
   _InsightsPageState createState() => _InsightsPageState();
@@ -18,13 +17,32 @@ class InsightsPage extends StatefulWidget {
 class _InsightsPageState extends State<InsightsPage> {
   late String currentState;
   late DateTime lastSynced;
+  StreamSubscription<String>? _stateSubscription;
+
+ @override
+void initState() {
+  super.initState();
+  currentState = widget.controller.currentState;  // This is the initial state from controller
+  lastSynced = DateTime.now(); // Current time is used for the last sync.
+
+  // This listens for state updates from the Dashboard's controller
+  _stateSubscription = widget.controller.stateStream.listen((newState) {
+    if (mounted) {
+      setState(() {
+        currentState = newState;
+        lastSynced = DateTime.now(); // Updates the last synced time when new data arrives
+      });
+    }
+  });
+}
+
 
   @override
-  void initState() {
-    super.initState();
-    currentState = widget.initialState;
-    lastSynced = widget.initialLastSynced;
+  void dispose() {
+    _stateSubscription?.cancel();
+    super.dispose();
   }
+
 
   void updateState(String newState) {
     setState(() {
@@ -69,99 +87,102 @@ class _InsightsPageState extends State<InsightsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Status Section
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE6E6FA),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              _getStatusMessage(currentState),
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Wound Images Section Title
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Text(
-              'Most Recent Wound Images',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Grid of Wound Images using RandomWoundImageWidget
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: 9, 
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3, 
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 1.5,
-              ),
-              itemBuilder: (context, index) {
-                return Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade400),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const RandomWoundImageWidget(),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Tip Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Container(
-              padding: const EdgeInsets.all(16),
+    return Scaffold(
+      appBar: Header(title: "Insights"),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Status Section
+            Container(
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: const Color(0xFFE6E6FA),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                _getTip(currentState),
+                _getStatusMessage(currentState),
                 style: const TextStyle(
-                  fontSize: 16,
-                  fontStyle: FontStyle.italic,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
               ),
             ),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 10),
 
-          // Last Synced Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text(
-              'Last synced: ${_formatDateTime(lastSynced)}',
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
-              textAlign: TextAlign.center,
+            // Wound Images Section Title
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                'Most Recent Wound Images',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-        ],
+            const SizedBox(height: 16),
+
+            // Grid of Wound Images using RandomWoundImageWidget
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: 9,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 1.5,
+                ),
+                itemBuilder: (context, index) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const RandomWoundImageWidget(),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Tip Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _getTip(currentState),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Last Synced Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                'Last synced: ${_formatDateTime(lastSynced)}',
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }
@@ -172,8 +193,18 @@ class _InsightsPageState extends State<InsightsPage> {
 
   String _formatMonth(int month) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
     return months[month - 1];
   }

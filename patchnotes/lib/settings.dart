@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+import 'bottom_navbar.dart';
+import 'dashboard.dart';
+import 'header.dart';
+import 'login.dart';
+
 class SettingsPage extends StatefulWidget {
   @override
   _SettingsPageState createState() => _SettingsPageState();
@@ -9,13 +14,11 @@ class _SettingsPageState extends State<SettingsPage> {
   bool isDarkMode = false;
   bool areNotificationsEnabled = true;
 
-// Color Palette - Purple and Teal/Blue Theme
   final Color primaryColor = Color(0xFF967BB6); // Soft Purple
   final Color accentColor = const Color(0xFF5B9BD5); // Teal Blue
   final Color switchActiveColor = Color(0xFF4A90E2); // Blue for toggles
-  final Color textColor =
-      Color(0xFF2D3142); // Dark Gray-Blue (Better Readability)
-  final Color cardColor = Colors.white; // White for cards (Good Contrast)
+  final Color textColor = Color(0xFF2D3142); // Dark Gray-Blue
+  final Color cardColor = Colors.white;
 
   void _navigateToChangeEmail() {}
   void _navigateToChangePassword() {}
@@ -36,7 +39,10 @@ class _SettingsPageState extends State<SettingsPage> {
               child: Text("Cancel", style: TextStyle(color: primaryColor))),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => LoginPageMobile()),
+              );
               // Implement Logout Logic
             },
             child: Text("Logout", style: TextStyle(color: Colors.red)),
@@ -73,6 +79,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: const Header(title: "Settings"),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: ListView(
@@ -116,6 +123,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
   }
+        
 
   Widget _buildSectionTitle(String title) {
     return Padding(

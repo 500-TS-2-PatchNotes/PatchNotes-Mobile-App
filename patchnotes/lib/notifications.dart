@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:patchnotes/dashboard.dart';
+
+import 'bottom_navbar.dart';
+import 'header.dart';
 
 class NotificationsPage extends StatefulWidget {
-  const NotificationsPage({super.key});
+  NotificationsPage({super.key});
 
   @override
   State<NotificationsPage> createState() => _NotificationsPageState();
@@ -39,6 +43,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: const Header(title: "Notifications"),
       body: notifications.isEmpty
           ? const Center(child: Text('No notifications'))
           : ListView.builder(
