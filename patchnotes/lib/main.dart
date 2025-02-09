@@ -5,6 +5,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'firebase_options.dart';
 import 'login.dart';
 
+//This is where the application is running from.
+//The LoginPage is the first page the user sees when they open the app.
+
+
 //Image Storage
 final storage = FirebaseStorage
     .instance; //- Firebase Storage that is used to store wound images

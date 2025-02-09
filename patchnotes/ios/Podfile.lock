@@ -97,6 +97,9 @@ PODS:
     - GoogleUtilities/Environment (~> 8.0)
     - GTMSessionFetcher/Core (< 5.0, >= 3.4)
   - Flutter (1.0.0)
+  - flutter_blue_plus_darwin (0.0.2):
+    - Flutter
+    - FlutterMacOS
   - fluttertoast (0.0.2):
     - Flutter
   - GoogleUtilities/AppDelegateSwizzler (8.0.2):
@@ -143,6 +146,7 @@ DEPENDENCIES:
   - firebase_storage (from `.symlinks/plugins/firebase_storage/ios`)
   - FirebaseFirestore (from `https://github.com/invertase/firestore-ios-sdk-frameworks.git`, tag `11.7.0`)
   - Flutter (from `Flutter`)
+  - flutter_blue_plus_darwin (from `.symlinks/plugins/flutter_blue_plus_darwin/darwin`)
   - fluttertoast (from `.symlinks/plugins/fluttertoast/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
 
@@ -190,6 +194,8 @@ EXTERNAL SOURCES:
     :tag: 11.7.0
   Flutter:
     :path: Flutter
+  flutter_blue_plus_darwin:
+    :path: ".symlinks/plugins/flutter_blue_plus_darwin/darwin"
   fluttertoast:
     :path: ".symlinks/plugins/fluttertoast/ios"
   image_picker_ios:
@@ -227,6 +233,7 @@ SPEC CHECKSUMS:
   FirebaseSharedSwift: a45efd84d60ebbfdcdbaebc66948af3630459e62
   FirebaseStorage: d35da127dd49edcbd07b8c07cf651a70161558b2
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  flutter_blue_plus_darwin: 09444a26fb6bdef523e55b68fc1c59af5a877ea6
   fluttertoast: 2c67e14dce98bbdb200df9e1acf610d7a6264ea1
   GoogleUtilities: 26a3abef001b6533cf678d3eb38fd3f614b7872d
   GTMSessionFetcher: 257ead9ba8e15a2d389d79496e02b9cc5dd0c62c

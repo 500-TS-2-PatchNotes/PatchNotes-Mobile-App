@@ -3,8 +3,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:patchnotes/header.dart';
-
-import 'mainscreen.dart';
+import 'package:patchnotes/mainscreen.dart';
+import 'package:patchnotes/bluetooth/manager.dart'; // Bluetooth logic
+import 'package:patchnotes/bluetooth/scanner.dart'; // Scanner UI
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 class BacterialGrowthController {
   static final BacterialGrowthController _instance =
@@ -78,6 +80,7 @@ class _DashboardPageState extends State<DashboardPage> {
   late BacterialGrowthController controller;
   late String currentState;
   StreamSubscription<String>? _stateSubscription;
+  BluetoothDevice? connectedDevice; // Store the selected device
 
   @override
   void initState() {
@@ -98,6 +101,29 @@ class _DashboardPageState extends State<DashboardPage> {
     super.dispose();
   }
 
+  void _onDeviceSelected(BluetoothDevice device) {
+    setState(() {
+      connectedDevice = device;
+    });
+  }
+
+  void _disconnectDevice() async {
+    if (connectedDevice != null) {
+      await connectedDevice!.disconnect();
+      setState(() {
+        connectedDevice = null; // Reset the connection
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Disconnected"),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -109,6 +135,15 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 10),
           _buildChart(),
           const SizedBox(height: 20),
+          if (connectedDevice != null)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                "Connected to: ${connectedDevice!.platformName}",
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
           _buildActionButtons(),
         ],
       ),
@@ -198,36 +233,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildActionButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildElevatedButton("Patient History", () {
-          mainScreenKey.currentState?.onTabTapped(1);
-        }),
-        _buildElevatedButton("Sync Device", () {
-          print("Syncing Device..."); // Replace with actual sync logic
-        }),
-      ],
-    );
-  }
-
-  Widget _buildElevatedButton(String text, VoidCallback? onPressed) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF5B9BD5).withOpacity(0.8),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
   Color _getStateBackgroundColor(String state) {
     switch (state) {
       case 'Healthy':
@@ -244,4 +249,42 @@ class _DashboardPageState extends State<DashboardPage> {
         return Colors.grey.withOpacity(0.5);
     }
   }
+
+  Widget _buildActionButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildElevatedButton("Patient History", () {
+          mainScreenKey.currentState?.onTabTapped(1);
+        }),
+        connectedDevice == null
+            ? _buildElevatedButton("Sync Device", () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        ScannerPage(onDeviceSelected: _onDeviceSelected),
+                  ),
+                );
+              })
+            : _buildElevatedButton("Disconnect", _disconnectDevice),
+      ],
+    );
+  }
+}
+
+Widget _buildElevatedButton(String text, VoidCallback? onPressed) {
+  return ElevatedButton(
+    onPressed: onPressed,
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF5B9BD5).withOpacity(0.8),
+      foregroundColor: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    ),
+    child: Text(
+      text,
+      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    ),
+  );
 }
