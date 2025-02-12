@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'bottom_navbar.dart';
+import '../widgets/bottom_navbar.dart';
 import 'dashboard.dart';
-import 'header.dart';
-import 'login.dart';
+import '../widgets/top_navbar.dart';
+import '../authentication/login.dart';
 
 class SettingsPage extends StatefulWidget {
   @override

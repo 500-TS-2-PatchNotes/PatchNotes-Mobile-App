@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:patchnotes/bottom_navbar.dart';
-import 'package:patchnotes/settings.dart';
+import 'package:patchnotes/widgets/bottom_navbar.dart';
+import 'package:patchnotes/pages/settings.dart';
 
 import 'dashboard.dart';
-import 'header.dart';
+import '../widgets/top_navbar.dart';
 import 'mainscreen.dart';
 
 class ProfilePage extends StatefulWidget {

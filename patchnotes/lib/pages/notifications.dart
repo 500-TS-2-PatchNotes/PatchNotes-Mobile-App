@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:patchnotes/dashboard.dart';
+import 'package:patchnotes/pages/dashboard.dart';
 
-import 'bottom_navbar.dart';
-import 'header.dart';
+import '../widgets/bottom_navbar.dart';
+import '../widgets/top_navbar.dart';
 
 class NotificationsPage extends StatefulWidget {
   NotificationsPage({super.key});

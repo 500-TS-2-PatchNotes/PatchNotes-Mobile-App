@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:patchnotes/bottom_navbar.dart';
-import 'package:patchnotes/dashboard.dart';
-import 'package:patchnotes/insights.dart';
-import 'package:patchnotes/notifications.dart';
-import 'package:patchnotes/profile.dart';
-import 'package:patchnotes/settings.dart';
+import 'package:patchnotes/widgets/bottom_navbar.dart';
+import 'package:patchnotes/pages/dashboard.dart';
+import 'package:patchnotes/pages/insights.dart';
+import 'package:patchnotes/pages/notifications.dart';
+import 'package:patchnotes/pages/profile.dart';
+import 'package:patchnotes/pages/settings.dart';
 
 // ignore: library_private_types_in_public_api
 final GlobalKey<_MainScreenState> mainScreenKey = GlobalKey<_MainScreenState>(); // Global Key so that pages can navigate to other pages when they click a button.

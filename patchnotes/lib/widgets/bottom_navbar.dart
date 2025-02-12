@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dashboard.dart';
+import '../pages/dashboard.dart';
 
 class BottomNavbar extends StatelessWidget {
   final int currentIndex;

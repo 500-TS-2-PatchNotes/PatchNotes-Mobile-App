@@ -60,7 +60,7 @@ class _ScannerPageState extends State<ScannerPage> {
                         onTap: () async {
                           await BluetoothManager.connectToDevice(device);
                           widget.onDeviceSelected(device);
-                          Navigator.pop(context); // Return to dashboard
+                          Navigator.pop(context); // Returns to the dashboard page
                         },
                       );
                     },

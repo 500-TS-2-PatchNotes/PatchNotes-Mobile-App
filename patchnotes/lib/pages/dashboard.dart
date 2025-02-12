@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:patchnotes/header.dart';
-import 'package:patchnotes/mainscreen.dart';
+import 'package:patchnotes/widgets/top_navbar.dart';
+import 'package:patchnotes/pages/mainscreen.dart';
 import 'package:patchnotes/bluetooth/manager.dart'; // Bluetooth logic
 import 'package:patchnotes/bluetooth/scanner.dart'; // Scanner UI
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';

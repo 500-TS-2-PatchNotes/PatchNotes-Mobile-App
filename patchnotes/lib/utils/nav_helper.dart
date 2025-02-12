@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'dashboard.dart';
-import 'insights.dart';
-import 'notifications.dart';
-import 'profile.dart';
-import 'settings.dart';
+import '../pages/dashboard.dart';
+import '../pages/insights.dart';
+import '../pages/notifications.dart';
+import '../pages/profile.dart';
+import '../pages/settings.dart';
 
 // This is a helper function that is designed for the BottomNavbar to navigate between widgets.
 void navigateToPage(BuildContext context, int index, String latestState, BacterialGrowthController controller) {

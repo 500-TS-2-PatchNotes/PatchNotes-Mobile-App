@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:patchnotes/dashboard.dart';
+import 'package:patchnotes/pages/dashboard.dart';
 import 'package:patchnotes/testImage.dart';
 
-import 'header.dart';
+import '../widgets/top_navbar.dart';
 
 class InsightsPage extends StatefulWidget {
   final BacterialGrowthController controller;

@@ -2,8 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'firebase_options.dart';
-import 'login.dart';
+import 'utils/firebase_options.dart';
+import 'authentication/login.dart';
 
 //This is where the application is running from.
 //The LoginPage is the first page the user sees when they open the app.
