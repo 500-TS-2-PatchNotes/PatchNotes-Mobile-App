@@ -2,26 +2,24 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:patchnotes/viewmodels/auth_viewmodel.dart';
+import 'package:patchnotes/viewmodels/bacterial_growth.dart';
+import 'package:patchnotes/views/authentication/login.dart';
+import 'package:provider/provider.dart';
 import 'utils/firebase_options.dart';
-import 'authentication/login.dart';
 
-//This is where the application is running from.
-//The LoginPage is the first page the user sees when they open the app.
+// Firebase Storage for wound images
+final storage = FirebaseStorage.instance;
 
-
-//Image Storage
-final storage = FirebaseStorage
-    .instance; //- Firebase Storage that is used to store wound images
-
-//Database
-FirebaseFirestore firestore =
-    FirebaseFirestore.instance; //- Firestore stores information
+// Firestore for storing user and wound data
+FirebaseFirestore firestore = FirebaseFirestore.instance;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
   runApp(const MyApp());
 }
 
@@ -30,9 +28,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Patch Notes',
-      home: LoginPageMobile(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => BacterialGrowthViewModel()), 
+        ChangeNotifierProvider(create: (_) => AuthViewModel())
+      ],
+      child: MaterialApp(
+        title: 'Patch Notes',
+        debugShowCheckedModeBanner: false,
+        home: LoginPageMobile(),
+      ),
     );
   }
 }

@@ -2,13 +2,15 @@ import 'dart:io';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 class BluetoothManager {
+  static bool _isScanning = false; // Track scanning state
+
   static Future<void> setupBluetooth() async {
     if (!(await FlutterBluePlus.isSupported)) {
       return;
     }
-    var adapaterState = await FlutterBluePlus.adapterState.first;
-    if (adapaterState != BluetoothAdapterState.on) {
-      return; // This is an empty list.
+    var adapterState = await FlutterBluePlus.adapterState.first;
+    if (adapterState != BluetoothAdapterState.on) {
+      return;
     }
     if (Platform.isAndroid) {
       await FlutterBluePlus.turnOn();
@@ -19,12 +21,14 @@ class BluetoothManager {
     List<BluetoothDevice> devices = [];
     Set<String> seenDeviceIds = {}; // Prevent duplicates
 
-    //This makes sure that Bluetooth is enabled prior to scanning for devices
-    var adapaterState = await FlutterBluePlus.adapterState.first;
-    if (adapaterState != BluetoothAdapterState.on) {
-      return devices; // This is an empty list.
+    var adapterState = await FlutterBluePlus.adapterState.first;
+    if (adapterState != BluetoothAdapterState.on) {
+      return devices; 
     }
 
+    if (_isScanning) return devices; // Prevent duplicate scans
+
+    _isScanning = true;
     await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
 
     FlutterBluePlus.scanResults.listen((results) {
@@ -37,9 +41,16 @@ class BluetoothManager {
     });
 
     await Future.delayed(const Duration(seconds: 5));
-    await FlutterBluePlus.stopScan();
+    await stopScan(); // Stop scanning properly
 
     return devices;
+  }
+
+  static Future<void> stopScan() async {
+    if (_isScanning) {
+      await FlutterBluePlus.stopScan();
+      _isScanning = false;
+    }
   }
 
   static Future<void> connectToDevice(BluetoothDevice device) async {

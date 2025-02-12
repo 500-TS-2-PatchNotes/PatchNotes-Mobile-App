@@ -1,22 +1,20 @@
 import 'package:flutter/material.dart';
-import '../pages/dashboard.dart';
-import '../pages/insights.dart';
-import '../pages/notifications.dart';
-import '../pages/profile.dart';
-import '../pages/settings.dart';
+import '../views/dashboard.dart';
+import '../views/insights.dart';
+import '../views/notifications.dart';
+import '../views/profile.dart';
+import '../views/settings.dart';
 
 // This is a helper function that is designed for the BottomNavbar to navigate between widgets.
-void navigateToPage(BuildContext context, int index, String latestState, BacterialGrowthController controller) {
+void navigateToPage(BuildContext context, int index, String latestState) {
   Widget page;
 
   switch (index) {
     case 0:
-      page = DashboardPage(controller: controller);
+      page = DashboardView();
       break;
     case 1:
-      page = InsightsPage(
-        controller: controller 
-      );
+      page = InsightsPage();
       break;
     case 2:
       page = NotificationsPage();
@@ -28,7 +26,7 @@ void navigateToPage(BuildContext context, int index, String latestState, Bacteri
       page = SettingsPage();
       break;
     default:
-      page = DashboardPage(controller: controller);
+      page = DashboardView();
   }
 
   // The code below is to prevent unnecessary page reloads

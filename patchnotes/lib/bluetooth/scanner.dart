@@ -22,16 +22,33 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 
   void _startScanning() async {
+    if (!mounted)
+      return; // Ensure the widget is still in the tree before starting
+
     setState(() {
       isScanning = true;
       foundDevices.clear(); // Clear previous scan results
     });
 
-    foundDevices = await BluetoothManager.scanForDevices();
-    
-    setState(() {
-      isScanning = false;
-    });
+    try {
+      List<BluetoothDevice> scannedDevices =
+          await BluetoothManager.scanForDevices();
+
+      if (!mounted) return; // Check again before calling setState()
+
+      setState(() {
+        foundDevices = scannedDevices;
+        isScanning = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isScanning =
+              false; // Ensure state is updated only if the widget is still active
+        });
+      }
+      print("Error scanning: $e");
+    }
   }
 
   @override
@@ -60,7 +77,8 @@ class _ScannerPageState extends State<ScannerPage> {
                         onTap: () async {
                           await BluetoothManager.connectToDevice(device);
                           widget.onDeviceSelected(device);
-                          Navigator.pop(context); // Returns to the dashboard page
+                          Navigator.pop(
+                              context); // Returns to the dashboard page
                         },
                       );
                     },
@@ -76,5 +94,11 @@ class _ScannerPageState extends State<ScannerPage> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    BluetoothManager.stopScan(); 
+    super.dispose();
   }
 }

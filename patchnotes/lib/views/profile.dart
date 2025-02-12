@@ -1,13 +1,9 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:patchnotes/widgets/bottom_navbar.dart';
-import 'package:patchnotes/pages/settings.dart';
-
-import 'dashboard.dart';
+import 'package:patchnotes/views/mainscreen.dart';
 import '../widgets/top_navbar.dart';
-import 'mainscreen.dart';
+
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -134,9 +130,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 elevation: 5,
               ),
               onPressed: () {
-  mainScreenKey.currentState?.onTabTapped(4); // Switch to Settings Page
-},
-
+                mainScreenKey.currentState
+                    ?.onTabTapped(4); 
+              },
               icon: Icon(Icons.settings, color: Colors.white),
               label: Text('Change Settings',
                   style: TextStyle(color: Colors.white)),

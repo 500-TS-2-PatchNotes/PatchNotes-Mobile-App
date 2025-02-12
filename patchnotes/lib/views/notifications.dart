@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:patchnotes/pages/dashboard.dart';
-
-import '../widgets/bottom_navbar.dart';
 import '../widgets/top_navbar.dart';
 
 class NotificationsPage extends StatefulWidget {
