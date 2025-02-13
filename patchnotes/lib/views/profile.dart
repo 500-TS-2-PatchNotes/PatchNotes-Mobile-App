@@ -10,8 +10,10 @@ class ProfileView extends StatelessWidget {
   Widget build(BuildContext context) {
     final profileVM = Provider.of<ProfileViewModel>(context);
 
-    TextEditingController bioController = TextEditingController(text: profileVM.bio);
-    TextEditingController notesController = TextEditingController(text: profileVM.medicalNotes);
+    TextEditingController bioController =
+        TextEditingController(text: profileVM.bio);
+    TextEditingController notesController =
+        TextEditingController(text: profileVM.medicalNotes);
 
     return Scaffold(
       appBar: const Header(title: "Profile"),
@@ -31,9 +33,12 @@ class ProfileView extends StatelessWidget {
             ),
             SizedBox(height: 10),
             Text(profileVM.displayName,
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
-            Text(profileVM.email, style: TextStyle(fontSize: 16, color: Colors.grey)),
-            Text(profileVM.phoneNumber, style: TextStyle(fontSize: 16, color: Colors.grey)),
+                style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black)),
+            Text(profileVM.email,
+                style: TextStyle(fontSize: 16, color: Colors.grey)),
             SizedBox(height: 16),
 
             // Bio Section
@@ -50,9 +55,14 @@ class ProfileView extends StatelessWidget {
               onEdit: profileVM.toggleBioEditing,
             ),
 
+            SizedBox(height: 5),
             // Device Status & Wound Status
-            _buildInfoCard("Device Status", profileVM.deviceStatus, Icons.bluetooth_connected),
-            _buildInfoCard("Wound Status", profileVM.woundStatus, Icons.healing),
+            _buildInfoCard("Device Status", profileVM.deviceStatus,
+                Icons.bluetooth_connected),
+            SizedBox(height: 5),
+            _buildInfoCard(
+                "Wound Status", profileVM.woundStatus, Icons.healing),
+            SizedBox(height: 5),
 
             // Medical Notes Section
             _buildEditableCard(
@@ -68,7 +78,7 @@ class ProfileView extends StatelessWidget {
               onEdit: profileVM.toggleNotesEditing,
             ),
 
-            SizedBox(height: 10),
+            SizedBox(height: 20),
 
             // Settings Button
             ElevatedButton.icon(
@@ -84,7 +94,8 @@ class ProfileView extends StatelessWidget {
                 mainScreenKey.currentState?.onTabTapped(4);
               },
               icon: Icon(Icons.settings, color: Colors.white),
-              label: Text('Change Settings', style: TextStyle(color: Colors.white)),
+              label: Text('Change Settings',
+                  style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -116,7 +127,9 @@ class ProfileView extends StatelessWidget {
                   children: [
                     Icon(icon, color: Color(0xFF5B9BD5)),
                     SizedBox(width: 10),
-                    Text(title, style: TextStyle(fontWeight: FontWeight.w400, color: Colors.black)),
+                    Text(title,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w400, color: Colors.black)),
                   ],
                 ),
                 SizedBox(height: 5),
@@ -137,14 +150,18 @@ class ProfileView extends StatelessWidget {
                         ),
                       )
                     : Text(value,
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black)),
               ],
             ),
             Positioned(
               top: 0,
               right: 0,
               child: IconButton(
-                icon: Icon(isEditing ? Icons.check : Icons.edit, color: Color(0xFF5B9BD5)),
+                icon: Icon(isEditing ? Icons.check : Icons.edit,
+                    color: Color(0xFF5B9BD5)),
                 onPressed: isEditing ? onSave : onEdit,
               ),
             ),
@@ -161,8 +178,13 @@ class ProfileView extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: Icon(icon, color: Color(0xFF5B9BD5)),
-        title: Text(title, style: TextStyle(fontWeight: FontWeight.w400, color: Colors.black)),
-        subtitle: Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+        title: Text(title,
+            style: TextStyle(fontWeight: FontWeight.w400, color: Colors.black)),
+        subtitle: Text(value,
+            style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black)),
       ),
     );
   }

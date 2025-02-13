@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:patchnotes/bluetooth/manager.dart';
 import 'package:patchnotes/viewmodels/auth_viewmodel.dart';
 import 'package:patchnotes/viewmodels/bacterial_growth.dart';
 import 'package:patchnotes/viewmodels/notifications_viewmodel.dart';
@@ -39,7 +40,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
         ChangeNotifierProvider(create: (_) => NotificationsViewModel()),
         ChangeNotifierProvider(create: (_) => ProfileViewModel()),
-        ChangeNotifierProvider(create: (_) => SettingsViewModel())
+        ChangeNotifierProvider(create: (_) => SettingsViewModel()),
+        ChangeNotifierProvider(create: (_) => BluetoothManager())
       ],
       child: MaterialApp(
         title: 'Patch Notes',

@@ -5,10 +5,9 @@ class ProfileViewModel extends ChangeNotifier {
   String _profileImage = "";
   String _displayName = "Joshua Debele";
   String _email = "joshua@example.com";
-  String _phoneNumber = "(+1) 123-456-7890";
   String _bio = "Software Engineer | Flutter Developer";
   bool _isEditingBio = false;
-  String _deviceStatus = "ESP32-CAM Connected";
+  String _deviceStatus = "Not Connected";
   String _woundStatus = "Current State: Healthy";
   String _medicalNotes = "Applied new dressing today.";
   bool _isEditingNotes = false;
@@ -16,7 +15,6 @@ class ProfileViewModel extends ChangeNotifier {
   String get profileImage => _profileImage;
   String get displayName => _displayName;
   String get email => _email;
-  String get phoneNumber => _phoneNumber;
   String get bio => _bio;
   bool get isEditingBio => _isEditingBio;
   String get deviceStatus => _deviceStatus;

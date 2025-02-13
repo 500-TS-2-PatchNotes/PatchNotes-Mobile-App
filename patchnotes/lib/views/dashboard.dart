@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:patchnotes/viewmodels/bacterial_growth.dart';
 import 'package:patchnotes/views/mainscreen.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../widgets/top_navbar.dart';
 import '../bluetooth/scanner.dart';
+import '../bluetooth/manager.dart';
 
 class DashboardView extends StatelessWidget {
   @override
@@ -20,7 +22,7 @@ class DashboardView extends StatelessWidget {
           const SizedBox(height: 10),
           _buildChart(growthVM),
           const SizedBox(height: 20),
-          _buildActionButtons(context, growthVM),
+          _buildActionButtons(context),
         ],
       ),
     );
@@ -101,35 +103,58 @@ class DashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(
-      BuildContext context, BacterialGrowthViewModel growthVM) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildElevatedButton("Patient History", () {
-          mainScreenKey.currentState?.onTabTapped(1);
-        }),
-        _buildElevatedButton("Sync Device", () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ScannerPage(
-                onDeviceSelected: (device) async {
-                  await device.connect();
-                },
-              ),
+  Widget _buildActionButtons(BuildContext context) {
+    return Consumer<BluetoothManager>(
+      builder: (context, bluetoothManager, child) {
+        BluetoothDevice? connectedDevice = bluetoothManager.connectedDevice;
+        bool isConnected = connectedDevice != null;
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildElevatedButton("Patient History", () {
+              mainScreenKey.currentState?.onTabTapped(1);
+            }),
+            _buildElevatedButton(
+              isConnected ? "Disconnect Device" : "Sync Device",
+              () async {
+                if (!isConnected) {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ScannerPage(
+                        onDeviceSelected: (device) async {
+                          if (device != null) {
+                            bool success =
+                                await bluetoothManager.connectToDevice(device);
+                            if (!success) {
+                              print("Device selection canceled or failed.");
+                            }
+                          } else {
+                            print("No device selected.");
+                          }
+                        },
+                      ),
+                    ),
+                  );
+                } else {
+                  await bluetoothManager.disconnectDevice();
+                }
+              },
+              color: isConnected ? Colors.red : const Color(0xFF5B9BD5),
             ),
-          );
-        }),
-      ],
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildElevatedButton(String text, VoidCallback? onPressed) {
+  Widget _buildElevatedButton(String text, VoidCallback? onPressed,
+      {Color color = const Color(0xFF5B9BD5)}) {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF5B9BD5).withOpacity(0.8),
+        backgroundColor: color.withOpacity(0.8),
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
