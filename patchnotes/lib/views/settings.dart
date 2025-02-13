@@ -11,7 +11,7 @@ class SettingsView extends StatelessWidget {
     return Scaffold(
       appBar: const Header(title: "Settings"),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: ListView(
           children: [
             // Account Settings

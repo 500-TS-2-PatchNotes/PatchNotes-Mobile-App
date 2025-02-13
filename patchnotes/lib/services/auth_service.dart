@@ -31,5 +31,10 @@ class AuthService {
     await _auth.signOut();
   }
 
+  Future<void> deleteUser() async {
+    await currentUser?.delete();
+  }
+
   User? get currentUser => _auth.currentUser;
 }
+

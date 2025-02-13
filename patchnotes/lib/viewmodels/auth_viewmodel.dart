@@ -1,8 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 
 class AuthViewModel extends ChangeNotifier {
   final AuthService _authService = AuthService();
+  User? get user => _authService.currentUser;
 
   bool isLoading = false;
   String? errorMessage;
@@ -44,6 +46,29 @@ class AuthViewModel extends ChangeNotifier {
       errorMessage = error.toString();
       notifyListeners();
       return false;
+    }
+  }
+
+  Future<void> signOut(BuildContext context) async {
+    await _authService.signOut();
+    notifyListeners();
+
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+  }
+
+  Future<void> deleteAccount(BuildContext context) async {
+    try {
+      await _authService.deleteUser();
+      await signOut(context);
+    } catch (e) {
+      print("Error deleting account: $e");
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to delete account: $e")),
+        );
+        Navigator.pop(context);
+      }
     }
   }
 }

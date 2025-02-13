@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:patchnotes/viewmodels/auth_viewmodel.dart';
+import 'package:provider/provider.dart';
 
 class SettingsViewModel extends ChangeNotifier {
   bool _isDarkMode = false;
@@ -48,9 +50,7 @@ class SettingsViewModel extends ChangeNotifier {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, "/login");
-              // TODO: Implement Logout Logic
+              Provider.of<AuthViewModel>(context, listen: false).signOut(context);
             },
             child: const Text("Logout", style: TextStyle(color: Colors.red)),
           ),
@@ -72,8 +72,7 @@ class SettingsViewModel extends ChangeNotifier {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              // TODO: Implement Account Deletion Logic
+              Provider.of<AuthViewModel>(context, listen: false).deleteAccount(context);
             },
             child: const Text("Delete", style: TextStyle(color: Colors.red)),
           ),
