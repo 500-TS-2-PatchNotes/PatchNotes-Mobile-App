@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../mainscreen.dart';
-import 'register.dart';
 
 class LoginPageMobile extends StatelessWidget {
   LoginPageMobile({super.key});
@@ -49,10 +48,12 @@ class LoginPageMobile extends StatelessWidget {
                       SizedBox(height: screenHeight * 0.04),
 
                       // Email Field
-                      _buildTextField(emailController, "Email", false, screenWidth, inputHeight),
+                      _buildTextField(emailController, "Email", false,
+                          screenWidth, inputHeight),
 
                       // Password Field
-                      _buildTextField(passwordController, "Password", true, screenWidth, inputHeight),
+                      _buildTextField(passwordController, "Password", true,
+                          screenWidth, inputHeight),
                       SizedBox(height: screenHeight * 0.03),
 
                       // Login Button
@@ -75,15 +76,15 @@ class LoginPageMobile extends StatelessWidget {
                                     );
                                     mainScreenKey.currentState?.reset();
                                     if (success) {
-                                      Navigator.of(context, rootNavigator: true).push(
-                                        MaterialPageRoute(
-                                          builder: (context) => MainScreen(key: mainScreenKey),
-                                        ),
-                                      );
+                                      Navigator.pushReplacementNamed(
+                                          context, "/home");
                                     } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         SnackBar(
-                                          content: Text(authViewModel.errorMessage ?? "Login failed"),
+                                          content: Text(
+                                              authViewModel.errorMessage ??
+                                                  "Login failed"),
                                           backgroundColor: Colors.red,
                                         ),
                                       );
@@ -118,10 +119,7 @@ class LoginPageMobile extends StatelessWidget {
                       // Register New Account
                       TextButton(
                         onPressed: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => RegisterPageMobile()));
+                          Navigator.pushReplacementNamed(context, "/register");
                         },
                         child: Text(
                           'Register New Account',
@@ -143,7 +141,8 @@ class LoginPageMobile extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hintText, bool obscureText, double screenWidth, double inputHeight) {
+  Widget _buildTextField(TextEditingController controller, String hintText,
+      bool obscureText, double screenWidth, double inputHeight) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: inputHeight * 0.1),
       child: TextFormField(

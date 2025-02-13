@@ -1,148 +1,80 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/top_navbar.dart';
-import 'authentication/login.dart';
+import '../../viewmodels/settings_viewmodel.dart';
 
-class SettingsPage extends StatefulWidget {
-  @override
-  _SettingsPageState createState() => _SettingsPageState();
-}
-
-class _SettingsPageState extends State<SettingsPage> {
-  bool isDarkMode = false;
-  bool areNotificationsEnabled = true;
-
-  final Color primaryColor = Color(0xFF967BB6); // Soft Purple
-  final Color accentColor = const Color(0xFF5B9BD5); // Teal Blue
-  final Color switchActiveColor = Color(0xFF4A90E2); // Blue for toggles
-  final Color textColor = Color(0xFF2D3142); // Dark Gray-Blue
-  final Color cardColor = Colors.white;
-
-  void _navigateToChangeEmail() {}
-  void _navigateToChangePassword() {}
-  void _pairNewDevice() {}
-  void _forgetDevice() {}
-
-  void _logout() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Logout", style: TextStyle(color: textColor)),
-        content: Text("Are you sure you want to log out?",
-            style: TextStyle(color: textColor)),
-        backgroundColor: cardColor,
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("Cancel", style: TextStyle(color: primaryColor))),
-          TextButton(
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => LoginPageMobile()),
-              );
-              // Implement Logout Logic
-            },
-            child: Text("Logout", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _deleteAccount() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Delete Account", style: TextStyle(color: textColor)),
-        content: Text("This action cannot be undone. Are you sure?",
-            style: TextStyle(color: textColor)),
-        backgroundColor: cardColor,
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("Cancel", style: TextStyle(color: primaryColor))),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Implement Account Deletion Logic
-            },
-            child: Text("Delete", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
+class SettingsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final settingsVM = Provider.of<SettingsViewModel>(context);
+
     return Scaffold(
       appBar: const Header(title: "Settings"),
       body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: ListView(
           children: [
             // Account Settings
             _buildSectionTitle("Account Settings"),
-            _buildSettingsTile(
-                "Change Email", Icons.email, _navigateToChangeEmail),
-            _buildSettingsTile(
-                "Change Password", Icons.lock, _navigateToChangePassword),
+            _buildSettingsTile("Change Email", Icons.email,
+                () => settingsVM.navigateToChangeEmail(context)),
+            _buildSettingsTile("Change Password", Icons.lock,
+                () => settingsVM.navigateToChangePassword(context)),
 
             // App Preferences
             _buildSectionTitle("App Preferences"),
-            _buildSwitchTile("Dark Mode", Icons.brightness_6, isDarkMode,
-                (value) {
-              setState(() {
-                isDarkMode = value;
-              });
-            }),
-            _buildSwitchTile("Enable Notifications", Icons.notifications_active,
-                areNotificationsEnabled, (value) {
-              setState(() {
-                areNotificationsEnabled = value;
-              });
-            }),
+            _buildSwitchTile(
+              "Dark Mode",
+              Icons.brightness_6,
+              settingsVM.isDarkMode,
+              (value) => settingsVM.toggleDarkMode(value),
+            ),
+            _buildSwitchTile(
+              "Enable Notifications",
+              Icons.notifications_active,
+              settingsVM.areNotificationsEnabled,
+              (value) => settingsVM.toggleNotifications(value),
+            ),
 
             // Bluetooth & Device Management
             _buildSectionTitle("Bluetooth & Device Management"),
             _buildSettingsTile(
-                "Pair a New Device", Icons.bluetooth, _pairNewDevice),
-            _buildSettingsTile("Forget/Disconnect Device",
-                Icons.bluetooth_disabled, _forgetDevice),
+                "Pair a New Device", Icons.bluetooth, () => settingsVM.pairNewDevice(context)),
+            _buildSettingsTile(
+                "Forget/Disconnect Device", Icons.bluetooth_disabled, () => settingsVM.forgetDevice(context)),
 
             // Security & Logout
             _buildSectionTitle("Security & Logout"),
-            _buildSettingsTile("Logout", Icons.exit_to_app, _logout),
-            _buildSettingsTile(
-                "Delete Account", Icons.delete_forever, _deleteAccount),
+            _buildSettingsTile("Logout", Icons.exit_to_app,
+                () => settingsVM.logout(context)),
+            _buildSettingsTile("Delete Account", Icons.delete_forever,
+                () => settingsVM.deleteAccount(context)),
           ],
         ),
       ),
     );
   }
-        
 
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Text(
         title,
-        style: TextStyle(
-            fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor),
+        style: const TextStyle(
+            fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF967BB6)),
       ),
     );
   }
 
   Widget _buildSettingsTile(String title, IconData icon, VoidCallback onTap) {
     return Card(
-      color: cardColor,
+      color: Colors.white,
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        leading: Icon(icon, color: accentColor), // Teal-Blue Icons
-        title: Text(title, style: TextStyle(fontSize: 14, color: textColor)),
-        trailing: Icon(Icons.arrow_forward_ios,
-            size: 14, color: primaryColor), // Purple Arrow
+        leading: Icon(icon, color: const Color(0xFF5B9BD5)),
+        title: Text(title, style: const TextStyle(fontSize: 14, color: Color(0xFF2D3142))),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF967BB6)),
         onTap: onTap,
       ),
     );
@@ -151,14 +83,14 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildSwitchTile(
       String title, IconData icon, bool value, ValueChanged<bool> onChanged) {
     return Card(
-      color: cardColor,
+      color: Colors.white,
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: SwitchListTile(
-        activeColor: switchActiveColor, // Teal Blue Switch
-        contentPadding: EdgeInsets.symmetric(horizontal: 16),
-        secondary: Icon(icon, color: primaryColor), // Purple Icons
-        title: Text(title, style: TextStyle(fontSize: 14, color: textColor)),
+        activeColor: const Color(0xFF4A90E2),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        secondary: Icon(icon, color: const Color(0xFF967BB6)),
+        title: Text(title, style: const TextStyle(fontSize: 14, color: Color(0xFF2D3142))),
         value: value,
         onChanged: onChanged,
       ),

@@ -1,48 +1,17 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:patchnotes/views/mainscreen.dart';
 import '../widgets/top_navbar.dart';
+import '../../viewmodels/profile_viewmodel.dart';
 
-
-class ProfilePage extends StatefulWidget {
-  @override
-  _ProfilePageState createState() => _ProfilePageState();
-}
-
-class _ProfilePageState extends State<ProfilePage> {
-  String profileImage = "";
-  String displayName = "Joshua Debele";
-  String email = "joshua@example.com";
-  String phoneNumber = "(+1) 123-456-7890";
-  String bio = "Software Engineer | Flutter Developer";
-  bool isEditingBio = false;
-  String deviceStatus = "ESP32-CAM Connected";
-  String woundStatus = "Current State: Healthy";
-  String medicalNotes = "Applied new dressing today.";
-  bool isEditingNotes = false;
-
-  final Color primaryColor = Color(0xFF967BB6); // Main purple theme
-  final Color accentColor =
-      const Color(0xFF5B9BD5); // Teal/Blue to complement purple
-  final Color cardColor = Colors.white; // Light lavender for cards
-  final Color textColor = Colors.black;
-
-  Future<void> _pickImage() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        profileImage = pickedFile.path;
-      });
-    }
-  }
-
+class ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    TextEditingController bioController = TextEditingController(text: bio);
-    TextEditingController notesController =
-        TextEditingController(text: medicalNotes);
+    final profileVM = Provider.of<ProfileViewModel>(context);
+
+    TextEditingController bioController = TextEditingController(text: profileVM.bio);
+    TextEditingController notesController = TextEditingController(text: profileVM.medicalNotes);
 
     return Scaffold(
       appBar: const Header(title: "Profile"),
@@ -50,71 +19,53 @@ class _ProfilePageState extends State<ProfilePage> {
         padding: EdgeInsets.all(16),
         child: Column(
           children: [
-            // The User's Profile Picture which is located at the top
+            // Profile Picture
             GestureDetector(
-              onTap: _pickImage,
+              onTap: profileVM.pickImage,
               child: CircleAvatar(
                 radius: 50,
-                backgroundImage: profileImage.isNotEmpty
-                    ? FileImage(File(profileImage))
-                    : AssetImage('assets/default_avatar.png')
-                        as ImageProvider, // We use the default avatar image if user does not upload a profile picture.
+                backgroundImage: profileVM.profileImage.isNotEmpty
+                    ? FileImage(File(profileVM.profileImage))
+                    : AssetImage('assets/default_avatar.png') as ImageProvider,
               ),
             ),
             SizedBox(height: 10),
-            Text(displayName,
-                style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: textColor)),
-            Text(email, style: TextStyle(fontSize: 16, color: Colors.grey)),
-            Text(phoneNumber,
-                style: TextStyle(fontSize: 16, color: Colors.grey)),
+            Text(profileVM.displayName,
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
+            Text(profileVM.email, style: TextStyle(fontSize: 16, color: Colors.grey)),
+            Text(profileVM.phoneNumber, style: TextStyle(fontSize: 16, color: Colors.grey)),
             SizedBox(height: 16),
 
-            // Bio Section. Allows the user to write a little bio about themselves.
+            // Bio Section
             _buildEditableCard(
               title: "Bio",
               icon: Icons.info,
-              isEditing: isEditingBio,
+              isEditing: profileVM.isEditingBio,
               controller: bioController,
-              value: bio,
+              value: profileVM.bio,
               onSave: () {
-                setState(() {
-                  bio = bioController.text;
-                  isEditingBio = false;
-                });
+                profileVM.updateBio(bioController.text);
+                profileVM.toggleBioEditing();
               },
-              onEdit: () {
-                setState(() {
-                  isEditingBio = true;
-                });
-              },
+              onEdit: profileVM.toggleBioEditing,
             ),
 
-            // Device Information - informs the user what kind of device they are connected to or whether they are connected
-            _buildInfoCard(
-                "Device Status", deviceStatus, Icons.bluetooth_connected),
-            _buildInfoCard("Wound Status", woundStatus, Icons.healing),
+            // Device Status & Wound Status
+            _buildInfoCard("Device Status", profileVM.deviceStatus, Icons.bluetooth_connected),
+            _buildInfoCard("Wound Status", profileVM.woundStatus, Icons.healing),
 
-            // Medical Notes Section - a medical note a user can write about their current health status.
+            // Medical Notes Section
             _buildEditableCard(
               title: "Medical Notes",
               icon: Icons.notes,
-              isEditing: isEditingNotes,
+              isEditing: profileVM.isEditingNotes,
               controller: notesController,
-              value: medicalNotes,
+              value: profileVM.medicalNotes,
               onSave: () {
-                setState(() {
-                  medicalNotes = notesController.text;
-                  isEditingNotes = false;
-                });
+                profileVM.updateMedicalNotes(notesController.text);
+                profileVM.toggleNotesEditing();
               },
-              onEdit: () {
-                setState(() {
-                  isEditingNotes = true;
-                });
-              },
+              onEdit: profileVM.toggleNotesEditing,
             ),
 
             SizedBox(height: 10),
@@ -122,7 +73,7 @@ class _ProfilePageState extends State<ProfilePage> {
             // Settings Button
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: accentColor,
+                backgroundColor: Color(0xFF5B9BD5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -130,12 +81,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 elevation: 5,
               ),
               onPressed: () {
-                mainScreenKey.currentState
-                    ?.onTabTapped(4); 
+                mainScreenKey.currentState?.onTabTapped(4);
               },
               icon: Icon(Icons.settings, color: Colors.white),
-              label: Text('Change Settings',
-                  style: TextStyle(color: Colors.white)),
+              label: Text('Change Settings', style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -153,7 +102,7 @@ class _ProfilePageState extends State<ProfilePage> {
     required VoidCallback onEdit,
   }) {
     return Card(
-      color: cardColor,
+      color: Colors.white,
       elevation: 5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -165,11 +114,9 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 Row(
                   children: [
-                    Icon(icon, color: accentColor),
+                    Icon(icon, color: Color(0xFF5B9BD5)),
                     SizedBox(width: 10),
-                    Text(title,
-                        style: TextStyle(
-                            fontWeight: FontWeight.w400, color: textColor)),
+                    Text(title, style: TextStyle(fontWeight: FontWeight.w400, color: Colors.black)),
                   ],
                 ),
                 SizedBox(height: 5),
@@ -183,25 +130,21 @@ class _ProfilePageState extends State<ProfilePage> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: accentColor),
+                            borderSide: BorderSide(color: Color(0xFF5B9BD5)),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           contentPadding: EdgeInsets.all(10),
                         ),
                       )
                     : Text(value,
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: textColor)),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
               ],
             ),
             Positioned(
               top: 0,
               right: 0,
               child: IconButton(
-                icon: Icon(isEditing ? Icons.check : Icons.edit,
-                    color: accentColor),
+                icon: Icon(isEditing ? Icons.check : Icons.edit, color: Color(0xFF5B9BD5)),
                 onPressed: isEditing ? onSave : onEdit,
               ),
             ),
@@ -213,16 +156,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildInfoCard(String title, String value, IconData icon) {
     return Card(
-      color: cardColor,
+      color: Colors.white,
       elevation: 5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        leading: Icon(icon, color: accentColor),
-        title: Text(title,
-            style: TextStyle(fontWeight: FontWeight.w400, color: textColor)),
-        subtitle: Text(value,
-            style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
+        leading: Icon(icon, color: Color(0xFF5B9BD5)),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.w400, color: Colors.black)),
+        subtitle: Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
       ),
     );
   }

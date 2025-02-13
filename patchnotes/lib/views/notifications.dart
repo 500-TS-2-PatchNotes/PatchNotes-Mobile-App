@@ -1,52 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:patchnotes/viewmodels/notifications_viewmodel.dart';
 import '../widgets/top_navbar.dart';
 
-class NotificationsPage extends StatefulWidget {
-  NotificationsPage({super.key});
-
-  @override
-  State<NotificationsPage> createState() => _NotificationsPageState();
-}
-
-class _NotificationsPageState extends State<NotificationsPage> {
-  List<NotificationItem> notifications = [
-    NotificationItem(
-        id: '1', title: 'Welcome!', message: 'Thanks for signing up.'),
-    NotificationItem(
-        id: '2',
-        title: 'Update Available',
-        message: 'A new update is ready to install.'),
-    NotificationItem(
-        id: '3',
-        title: 'Reminder',
-        message: 'Make sure to check for any color changes on your wound.'),
-  ];
-
-  void _markAsSeen(int index) {
-    setState(() {
-      notifications[index].seen = true;
-    });
-  }
-
-  void _removeNotification(int index) {
-    setState(() {
-      notifications.removeAt(index);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Notification dismissed')),
-    );
-  }
-
+class NotificationsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final notificationsVM = Provider.of<NotificationsViewModel>(context);
+
     return Scaffold(
       appBar: const Header(title: "Notifications"),
-      body: notifications.isEmpty
+      body: notificationsVM.notifications.isEmpty
           ? const Center(child: Text('No notifications'))
           : ListView.builder(
-              itemCount: notifications.length,
+              itemCount: notificationsVM.notifications.length,
               itemBuilder: (context, index) {
-                final item = notifications[index];
+                final item = notificationsVM.notifications[index];
+
                 return Dismissible(
                   key: Key(item.id),
                   background: Container(
@@ -63,23 +33,22 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   ),
                   confirmDismiss: (direction) async {
                     if (direction == DismissDirection.startToEnd) {
-                      // Swipe right: mark as seen and cancel dismissal.
-                      _markAsSeen(index);
+                      notificationsVM.markAsSeen(index);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('"${item.title}" marked as seen')),
+                        SnackBar(content: Text('"${item.title}" marked as seen')),
                       );
-                      return false; // Prevent the dismissal removal.
+                      return false; // Prevent dismissal
                     } else if (direction == DismissDirection.endToStart) {
-                      // Swipe left: allow dismissal (removal).
                       return true;
                     }
                     return false;
                   },
                   onDismissed: (direction) {
-                    // This callback is only called if confirmDismiss returns true.
                     if (direction == DismissDirection.endToStart) {
-                      _removeNotification(index);
+                      notificationsVM.removeNotification(index);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Notification dismissed')),
+                      );
                     }
                   },
                   child: Card(
@@ -90,11 +59,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       trailing: TextButton(
                         child: const Text('Mark as Seen'),
                         onPressed: () {
-                          _markAsSeen(index);
+                          notificationsVM.markAsSeen(index);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content:
-                                    Text('"${item.title}" marked as seen')),
+                            SnackBar(content: Text('"${item.title}" marked as seen')),
                           );
                         },
                       ),
@@ -105,18 +72,4 @@ class _NotificationsPageState extends State<NotificationsPage> {
             ),
     );
   }
-}
-
-class NotificationItem {
-  final String id;
-  final String title;
-  final String message;
-  bool seen;
-
-  NotificationItem({
-    required this.id,
-    required this.title,
-    required this.message,
-    this.seen = false,
-  });
 }

@@ -27,7 +27,7 @@ class BacterialGrowthViewModel extends ChangeNotifier {
         _dataPoints.removeAt(0);
       }
       
-      notifyListeners(); // Notify UI to update
+      notifyListeners(); // This will notify the user interfaces
     });
   }
 

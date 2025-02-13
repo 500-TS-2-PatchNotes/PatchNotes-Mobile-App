@@ -11,7 +11,19 @@ class AuthService {
       );
       return userCredential.user;
     } on FirebaseAuthException catch (e) {
-      throw e.code; 
+      throw e.code;
+    }
+  }
+
+  Future<User?> register(String email, String password) async {
+    try {
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password.trim(),
+      );
+      return userCredential.user;
+    } on FirebaseAuthException catch (e) {
+      throw e.code;
     }
   }
 

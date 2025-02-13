@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../widgets/top_navbar.dart';
 import '../utils/testImage.dart';
 
-class InsightsPage extends StatelessWidget {
+class InsightsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final growthVM = Provider.of<BacterialGrowthViewModel>(context);
@@ -15,7 +15,6 @@ class InsightsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Status Section
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -34,7 +33,6 @@ class InsightsPage extends StatelessWidget {
             ),
             const SizedBox(height: 10),
 
-            // Wound Images Section Title
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 8),
               child: Text(

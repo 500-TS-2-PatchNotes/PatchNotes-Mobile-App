@@ -14,16 +14,16 @@ void navigateToPage(BuildContext context, int index, String latestState) {
       page = DashboardView();
       break;
     case 1:
-      page = InsightsPage();
+      page = InsightsView();
       break;
     case 2:
-      page = NotificationsPage();
+      page = NotificationsView();
       break;
     case 3:
-      page = ProfilePage();
+      page = ProfileView();
       break;
     case 4:
-      page = SettingsPage();
+      page = SettingsView();
       break;
     default:
       page = DashboardView();

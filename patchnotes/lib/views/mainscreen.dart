@@ -26,10 +26,10 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     _pages = [
       DashboardView(),
-      InsightsPage(),
-      NotificationsPage(),
-      ProfilePage(),
-      SettingsPage(),
+      InsightsView(),
+      NotificationsView(),
+      ProfileView(),
+      SettingsView(),
     ];
   }
 

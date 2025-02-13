@@ -1,24 +1,20 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'login.dart';
+import '../../viewmodels/auth_viewmodel.dart';
 
-class RegisterPageMobile extends StatefulWidget {
+class RegisterPageMobile extends StatelessWidget {
   RegisterPageMobile({super.key});
 
-  @override
-  _RegisterPageMobileState createState() => _RegisterPageMobileState();
-}
-
-class _RegisterPageMobileState extends State<RegisterPageMobile> {
-  final _firebaseAuth = FirebaseAuth.instance;
   final _formKey = GlobalKey<FormState>();
-
-  final TextEditingController email = TextEditingController();
-  final TextEditingController password = TextEditingController();
+  final TextEditingController firstNameController = TextEditingController();
+  final TextEditingController lastNameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
+    final authViewModel = Provider.of<AuthViewModel>(context);
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
     final double textSize = screenWidth * 0.05;
@@ -35,68 +31,27 @@ class _RegisterPageMobileState extends State<RegisterPageMobile> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(height: screenHeight * 0.08),
-                Text('Register',
-                    style: TextStyle(
-                        color: const Color(0xFF967BB6),
-                        fontSize: textSize * 1.2,
-                        fontWeight: FontWeight.bold)),
+                Text(
+                  'Register',
+                  style: TextStyle(
+                    color: const Color(0xFF967BB6),
+                    fontSize: textSize * 1.2,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 SizedBox(height: screenHeight * 0.04),
-                TextField(
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFFEDF2F7),
-                    hintText: 'First Name',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
+
+                _buildTextField(firstNameController, "First Name", false,
+                    screenWidth, inputHeight),
+                _buildTextField(lastNameController, "Last Name", false,
+                    screenWidth, inputHeight),
+                _buildTextField(emailController, "Email (Username)", false,
+                    screenWidth, inputHeight),
+                _buildTextField(passwordController, "Password", true,
+                    screenWidth, inputHeight),
                 SizedBox(height: screenHeight * 0.02),
-                TextField(
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFFEDF2F7),
-                    hintText: 'Last Name',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-                SizedBox(height: screenHeight * 0.02),
-                TextFormField(
-                  controller: email,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFFEDF2F7),
-                    hintText: "Email (Username)",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  validator: (value) =>
-                      value!.isEmpty ? "Please enter an email" : null,
-                ),
-                SizedBox(height: screenHeight * 0.02),
-                TextFormField(
-                  controller: password,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFFEDF2F7),
-                    hintText: "Password",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  validator: (value) => value!.length < 6
-                      ? "Password must be at least 6 characters"
-                      : null,
-                ),
-                SizedBox(height: screenHeight * 0.02),
+
+                // Goes to the Login Page
                 SizedBox(
                   width: double.infinity,
                   height: inputHeight,
@@ -104,86 +59,109 @@ class _RegisterPageMobileState extends State<RegisterPageMobile> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF9696D9),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    onPressed: () async {
-                      String message = '';
-                      if (_formKey.currentState!.validate()) {
-                        try {
-                          await _firebaseAuth.createUserWithEmailAndPassword(
-                            email: email.text.trim(),
-                            password: password.text.trim(),
-                          );
-
-                          Fluttertoast.showToast(
-                            msg:
-                                "Registration successful! Redirecting to login...",
-                            toastLength: Toast.LENGTH_LONG,
-                            gravity: ToastGravity.SNACKBAR,
-                            backgroundColor:
-                                Colors.green,
-                            textColor: Colors.white,
-                            fontSize: 14.0,
-                          );
-
-                          Future.delayed(const Duration(seconds: 1), () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => LoginPageMobile(),
-                              ),
-                            );
-                          });
-                        } on FirebaseAuthException catch (e) {
-                          if (e.code == 'weak-password') {
-                            message = 'The password provided is too weak.';
-                          } else if (e.code == 'email-already-in-use') {
-                            message =
-                                'An account already exists with that email.';
-                          }
-                          Fluttertoast.showToast(
-                            msg: message,
-                            toastLength: Toast.LENGTH_LONG,
-                            gravity: ToastGravity.SNACKBAR,
-                            backgroundColor: Colors.black54,
-                            textColor: Colors.white,
-                            fontSize: 14.0,
-                          );
-                        } catch (e) {
-                          Fluttertoast.showToast(
-                            msg: "Failed: $e",
-                            toastLength: Toast.LENGTH_LONG,
-                            gravity: ToastGravity.SNACKBAR,
-                            backgroundColor: Colors.black54,
-                            textColor: Colors.white,
-                            fontSize: 14.0,
-                          );
-                        }
-                      }
-                    },
-                    child: Text(
-                      'Register',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: textSize,
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
+                    onPressed: authViewModel.isLoading
+                        ? null
+                        : () async {
+                            if (_formKey.currentState!.validate()) {
+                              bool success = await authViewModel.register(
+                                emailController.text.trim(),
+                                passwordController.text.trim(),
+                              );
+
+                              if (success) {
+                                _showToast(
+                                    "Registration successful! Redirecting to login...",
+                                    Colors.green);
+                                Future.delayed(const Duration(seconds: 1), () {
+                                  Navigator.pushReplacementNamed(
+                                      context, "/login");
+                                });
+                              } else {
+                                _showToast(
+                                    authViewModel.errorMessage ??
+                                        "Registration failed",
+                                    Colors.red);
+                              }
+                            }
+                          },
+                    child: authViewModel.isLoading
+                        ? CircularProgressIndicator(color: Colors.white)
+                        : Text(
+                            'Register',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: textSize,
+                            ),
+                          ),
                   ),
                 ),
+
+                // Redirects to the login page
                 TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => LoginPageMobile()));
-                    },
-                    child: Text('Already have an account? Login',
-                        style: TextStyle(fontSize: textSize * 0.7))),
+                  onPressed: () {
+                    Navigator.pushNamed(context, "/login");
+                  },
+                  child: Text(
+                    'Already have an account? Login',
+                    style: TextStyle(fontSize: textSize * 0.7),
+                  ),
+                ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String hintText,
+      bool obscureText, double screenWidth, double inputHeight) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: inputHeight * 0.1),
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscureText,
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: const Color(0xFFEDF2F7),
+          hintText: hintText,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: EdgeInsets.symmetric(
+            vertical: inputHeight * 0.3,
+            horizontal: screenWidth * 0.04,
+          ),
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return "Please enter your $hintText";
+          }
+          if (hintText == "Email (Username)" &&
+              !RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+            return 'Please enter a valid email';
+          }
+          if (hintText == "Password" && value.length < 6) {
+            return 'Password must be at least 6 characters';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  void _showToast(String message, Color color) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.SNACKBAR,
+      backgroundColor: color,
+      textColor: Colors.white,
+      fontSize: 14.0,
     );
   }
 }

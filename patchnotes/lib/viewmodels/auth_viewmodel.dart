@@ -26,4 +26,24 @@ class AuthViewModel extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> register(String email, String password) async {
+    try {
+      isLoading = true;
+      errorMessage = null;
+      notifyListeners();
+
+      var user = await _authService.register(email, password);
+
+      isLoading = false;
+      notifyListeners();
+
+      return user != null;
+    } catch (error) {
+      isLoading = false;
+      errorMessage = error.toString();
+      notifyListeners();
+      return false;
+    }
+  }
 }
