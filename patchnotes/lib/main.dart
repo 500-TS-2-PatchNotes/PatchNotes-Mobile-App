@@ -17,13 +17,14 @@ import 'utils/firebase_options.dart';
 // Firebase Storage for wound images
 final storage = FirebaseStorage.instance;
 
-// Firestore for storing user and wound data
-FirebaseFirestore firestore = FirebaseFirestore.instance;
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
+  );
+  //Caches the data on the device for faster data retrieval
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true
   );
 
   runApp(const MyApp());
