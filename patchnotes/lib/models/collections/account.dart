@@ -1,23 +1,50 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Account {
-  final String uid; // (foreign). To reference the user's id.
-  final String profile_pic;
-  final String bio;
-  final String wound_status;
-  final String med_note;
-  final bool dark_mode;
-  final bool enabledNotifications;
-  final Timestamp date_created;
+  String? profilePic;
+  String? bio;
+  String? woundStatus;
+  String? medNote;
+  bool? darkMode;
+  bool? enabledNotifications;
+  Timestamp? dateCreated;
 
   Account({
-    required this.uid,
-    required this.profile_pic,
-    required this.bio,
-    required this.wound_status,
-    required this.med_note,
-    required this.dark_mode,
-    required this.enabledNotifications,
-    required this.date_created,
+    this.profilePic,
+    this.bio,
+    this.woundStatus,
+    this.medNote,
+    this.darkMode,
+    this.enabledNotifications,
+    this.dateCreated,
   });
+
+  factory Account.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> snapshot,
+    SnapshotOptions? options,
+  ) {
+    final data = snapshot.data();
+    return Account(
+      profilePic: data?['profilePic'],
+      bio: data?['bio'],
+      woundStatus: data?['woundStatus'],
+      medNote: data?['medNote'],
+      darkMode: data?['darkMode'],
+      enabledNotifications: data?['enabledNotifications'],
+      dateCreated: data?['dateCreated']
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      if(profilePic != null) "profilePic": profilePic,
+      if(bio != null) "bio": bio,
+      if(woundStatus != null) "woundStatus": woundStatus,
+      if(medNote != null) "medNote": medNote,
+      if(darkMode != null) "darkMode": darkMode,
+      if(enabledNotifications != null) "enabledNotifications": enabledNotifications,
+      if(dateCreated != null) "dateCreated": dateCreated
+    };
+  }
+
 }

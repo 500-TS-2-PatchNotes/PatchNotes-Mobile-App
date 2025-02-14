@@ -1,21 +1,47 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Wound {
-  final String uid; // (foreign). To reference the user's id.
-  final String wound_status;
-  final List<String> wound_images;
-  final Timestamp image_timestamp;
-  final Timestamp last_synced;
-  final String colour;
-  final double cfu;
+  String? woundStatus;
+  List<String>? woundImages;
+  Timestamp? imageTimestamp;
+  Timestamp? lastSynced;
+  String? colour;
+  double? cfu;
 
   Wound({
-    required this.uid,
-    required this.wound_status,
-    required this.wound_images,
-    required this.image_timestamp,
-    required this.last_synced,
-    required this.colour,
-    required this.cfu,
+    this.woundStatus,
+    this.woundImages,
+    this.imageTimestamp,
+    this.lastSynced,
+    this.colour,
+    this.cfu,
   });
+
+
+    factory Wound.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> snapshot,
+    SnapshotOptions? options,
+  ) {
+    final data = snapshot.data();
+    return Wound(
+      woundStatus: data?['woundStatus'],
+      woundImages: data?['woundImages'],
+      imageTimestamp: data?['imageTimestamp'],
+      lastSynced: data?['lastSynced'],
+      colour: data?['colour'],
+      cfu: data?['cfu'],
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      if(woundStatus != null) "woundStatus": woundStatus,
+      if(woundImages != null) "woundImages": woundImages,
+      if(imageTimestamp != null) "imageTimestamp": imageTimestamp,
+      if(lastSynced != null) "lastSynced": lastSynced,
+      if(colour != null) "colour": colour,
+      if(cfu != null) "cfu": cfu
+    };
+  }
+
 }
