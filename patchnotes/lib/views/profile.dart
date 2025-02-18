@@ -26,11 +26,21 @@ class ProfileView extends StatelessWidget {
               onTap: profileVM.pickImage,
               child: CircleAvatar(
                 radius: 50,
-                backgroundImage: profileVM.profileImage.isNotEmpty
-                    ? FileImage(File(profileVM.profileImage))
-                    : AssetImage('assets/default_avatar.png') as ImageProvider,
+                backgroundColor: Colors.grey[300], // Ensures background color
+                child: profileVM.profileImage.isNotEmpty
+                    ? ClipOval(
+                        child: Image.file(
+                          File(profileVM.profileImage),
+                          width: 100, // Ensure full circle fit
+                          height: 100,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Icon(Icons.person,
+                        size: 50, color: Colors.white), // Default icon
               ),
             ),
+
             SizedBox(height: 10),
             Text(profileVM.displayName,
                 style: TextStyle(

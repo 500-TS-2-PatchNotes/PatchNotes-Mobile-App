@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Account {
-  String? profilePic;
   String? bio;
   String? woundStatus;
   String? medNote;
@@ -10,7 +9,6 @@ class Account {
   Timestamp? dateCreated;
 
   Account({
-    this.profilePic,
     this.bio,
     this.woundStatus,
     this.medNote,
@@ -25,7 +23,6 @@ class Account {
   ) {
     final data = snapshot.data();
     return Account(
-      profilePic: data?['profilePic'],
       bio: data?['bio'],
       woundStatus: data?['woundStatus'],
       medNote: data?['medNote'],
@@ -37,7 +34,6 @@ class Account {
 
   Map<String, dynamic> toFirestore() {
     return {
-      if(profilePic != null) "profilePic": profilePic,
       if(bio != null) "bio": bio,
       if(woundStatus != null) "woundStatus": woundStatus,
       if(medNote != null) "medNote": medNote,
@@ -46,5 +42,6 @@ class Account {
       if(dateCreated != null) "dateCreated": dateCreated
     };
   }
+
 
 }

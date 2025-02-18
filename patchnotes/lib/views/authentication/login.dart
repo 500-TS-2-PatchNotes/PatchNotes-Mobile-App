@@ -3,16 +3,28 @@ import 'package:provider/provider.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../mainscreen.dart';
 
-class LoginPageMobile extends StatelessWidget {
-  LoginPageMobile({super.key});
+class LoginPageMobile extends StatefulWidget {
+  const LoginPageMobile({super.key});
 
+  @override
+  _LoginPageMobileState createState() => _LoginPageMobileState();
+}
+
+class _LoginPageMobileState extends State<LoginPageMobile> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final authViewModel = Provider.of<AuthViewModel>(context);
+    final authViewModel = context.watch<AuthViewModel>();
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
     final double textSize = screenWidth * 0.05;
@@ -33,18 +45,22 @@ class LoginPageMobile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox(height: screenHeight * 0.08),
-                      Text('Login',
-                          style: TextStyle(
-                            color: const Color(0xFF967BB6),
-                            fontSize: textSize * 1.2,
-                            fontWeight: FontWeight.bold,
-                          )),
+                      Text(
+                        'Login',
+                        style: TextStyle(
+                          color: const Color(0xFF967BB6),
+                          fontSize: textSize * 1.2,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       SizedBox(height: screenHeight * 0.01),
-                      Text('Sign in to your account',
-                          style: TextStyle(
-                            color: const Color(0xFF4A5568),
-                            fontSize: textSize * 0.7,
-                          )),
+                      Text(
+                        'Sign in to your account',
+                        style: TextStyle(
+                          color: const Color(0xFF4A5568),
+                          fontSize: textSize * 0.7,
+                        ),
+                      ),
                       SizedBox(height: screenHeight * 0.04),
 
                       // Email Field
@@ -70,12 +86,16 @@ class LoginPageMobile extends StatelessWidget {
                               ? null
                               : () async {
                                   if (_formKey.currentState!.validate()) {
-                                    bool success = await authViewModel.login(
+                                    bool success = await context
+                                        .read<AuthViewModel>()
+                                        .login(
                                       emailController.text.trim(),
                                       passwordController.text.trim(),
+                                      context
                                     );
-                                    mainScreenKey.currentState?.reset();
+
                                     if (success) {
+                                      mainScreenKey.currentState?.reset();
                                       Navigator.pushReplacementNamed(
                                           context, "/home");
                                     } else {
@@ -106,7 +126,9 @@ class LoginPageMobile extends StatelessWidget {
 
                       // Forgot Password
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          // Need to Implement Functionality Here... 
+                        },
                         child: Text(
                           'Forgot Password?',
                           style: TextStyle(
@@ -165,7 +187,8 @@ class LoginPageMobile extends StatelessWidget {
           if (value == null || value.isEmpty) {
             return "Please enter your $hintText";
           }
-          if (hintText == "Email" && !RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+          if (hintText == "Email" &&
+              !RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
             return 'Please enter a valid email';
           }
           if (hintText == "Password" && value.length < 6) {

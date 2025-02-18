@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:patchnotes/viewmodels/bacterial_growth.dart';
+import 'package:patchnotes/viewmodels/dashboard_viewmodel.dart';
 import 'package:provider/provider.dart';
 import '../widgets/top_navbar.dart';
 import '../utils/testImage.dart';

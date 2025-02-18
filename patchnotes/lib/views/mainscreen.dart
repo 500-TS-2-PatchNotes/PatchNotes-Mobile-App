@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:patchnotes/viewmodels/bacterial_growth.dart';
+import 'package:patchnotes/viewmodels/auth_viewmodel.dart';
+import 'package:patchnotes/viewmodels/dashboard_viewmodel.dart';
 import 'package:patchnotes/views/dashboard.dart';
 import 'package:patchnotes/views/insights.dart';
 import 'package:provider/provider.dart';
@@ -30,24 +31,28 @@ class _MainScreenState extends State<MainScreen> {
       NotificationsView(),
       ProfileView(),
       SettingsView(),
-    ];
+    ]; 
+
+    // addPostFrameCallback to prevent notifyListeners() error
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authViewModel = context.read<AuthViewModel>();
+      if (authViewModel.firebaseUser != null) {
+        authViewModel.fetchAllUserData(authViewModel.firebaseUser!.uid);
+      }
+    });
   }
 
   void onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
+    setState(() => _currentIndex = index);
   }
 
   void reset() {
-    setState(() {
-      _currentIndex = 0;
-    });
+    setState(() => _currentIndex = 0);
   }
 
   @override
   Widget build(BuildContext context) {
-    final growthVM = Provider.of<BacterialGrowthViewModel>(context);
+    final growthVM = context.watch<BacterialGrowthViewModel>();
 
     return Scaffold(
       body: IndexedStack(

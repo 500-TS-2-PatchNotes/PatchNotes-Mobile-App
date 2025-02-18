@@ -3,18 +3,67 @@ import 'package:provider/provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 
-class RegisterPageMobile extends StatelessWidget {
-  RegisterPageMobile({super.key});
+class RegisterPageMobile extends StatefulWidget {
+  const RegisterPageMobile({super.key});
 
+  @override
+  _RegisterPageMobileState createState() => _RegisterPageMobileState();
+}
+
+class _RegisterPageMobileState extends State<RegisterPageMobile> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  bool _isSubmitting = false; // Tracks if form is being submitted
+
+  @override
+  void dispose() {
+    firstNameController.dispose();
+    lastNameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _registerUser(BuildContext context) async {
+    final authViewModel = context.read<AuthViewModel>();
+
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isSubmitting = true;
+      });
+
+      bool success = await authViewModel.register(
+        emailController.text.trim(),
+        passwordController.text.trim(),
+        firstNameController.text.trim(),
+        lastNameController.text.trim(),
+      );
+
+      if (success) {
+        _showToast("Registration successful! Redirecting to login...", Colors.green);
+
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, "/login");
+          }
+        });
+      } else {
+        _showToast(authViewModel.errorMessage ?? "Registration failed", Colors.red);
+      }
+
+      setState(() {
+        _isSubmitting = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authViewModel = Provider.of<AuthViewModel>(context);
+    final authViewModel = context.watch<AuthViewModel>();
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
     final double textSize = screenWidth * 0.05;
@@ -41,17 +90,17 @@ class RegisterPageMobile extends StatelessWidget {
                 ),
                 SizedBox(height: screenHeight * 0.04),
 
-                _buildTextField(firstNameController, "First Name", false,
-                    screenWidth, inputHeight),
-                _buildTextField(lastNameController, "Last Name", false,
-                    screenWidth, inputHeight),
-                _buildTextField(emailController, "Email (Username)", false,
-                    screenWidth, inputHeight),
-                _buildTextField(passwordController, "Password", true,
-                    screenWidth, inputHeight),
+                // First Name
+                _buildTextField(firstNameController, "First Name", false, screenWidth, inputHeight),
+                // Last Name
+                _buildTextField(lastNameController, "Last Name", false, screenWidth, inputHeight),
+                // Email
+                _buildTextField(emailController, "Email (Username)", false, screenWidth, inputHeight),
+                // Password
+                _buildTextField(passwordController, "Password", true, screenWidth, inputHeight),
                 SizedBox(height: screenHeight * 0.02),
 
-                // Goes to the Login Page
+                // Register Button
                 SizedBox(
                   width: double.infinity,
                   height: inputHeight,
@@ -62,32 +111,8 @@ class RegisterPageMobile extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    onPressed: authViewModel.isLoading
-                        ? null
-                        : () async {
-                            if (_formKey.currentState!.validate()) {
-                              bool success = await authViewModel.register(
-                                emailController.text.trim(),
-                                passwordController.text.trim(),
-                              );
-
-                              if (success) {
-                                _showToast(
-                                    "Registration successful! Redirecting to login...",
-                                    Colors.green);
-                                Future.delayed(const Duration(seconds: 1), () {
-                                  Navigator.pushReplacementNamed(
-                                      context, "/login");
-                                });
-                              } else {
-                                _showToast(
-                                    authViewModel.errorMessage ??
-                                        "Registration failed",
-                                    Colors.red);
-                              }
-                            }
-                          },
-                    child: authViewModel.isLoading
+                    onPressed: _isSubmitting || authViewModel.isLoading ? null : () => _registerUser(context),
+                    child: _isSubmitting || authViewModel.isLoading
                         ? CircularProgressIndicator(color: Colors.white)
                         : Text(
                             'Register',
@@ -102,7 +127,7 @@ class RegisterPageMobile extends StatelessWidget {
                 // Redirects to the login page
                 TextButton(
                   onPressed: () {
-                    Navigator.pushNamed(context, "/login");
+                    Navigator.pushReplacementNamed(context, "/login");
                   },
                   child: Text(
                     'Already have an account? Login',
