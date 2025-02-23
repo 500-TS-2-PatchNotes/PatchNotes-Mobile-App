@@ -1,68 +1,39 @@
 import 'package:flutter/material.dart';
-import 'package:patchnotes/viewmodels/auth_viewmodel.dart';
-import 'package:patchnotes/viewmodels/dashboard_viewmodel.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:patchnotes/providers/bg_provider.dart';
+import 'package:patchnotes/providers/navigation.dart';
 import 'package:patchnotes/views/dashboard.dart';
 import 'package:patchnotes/views/insights.dart';
-import 'package:provider/provider.dart';
+import 'package:patchnotes/views/notifications.dart';
+import 'package:patchnotes/views/profile.dart';
+import 'package:patchnotes/views/settings.dart';
 import '../widgets/bottom_navbar.dart';
-import '../views/notifications.dart';
-import '../views/profile.dart';
-import '../views/settings.dart';
 
-final GlobalKey<_MainScreenState> mainScreenKey = GlobalKey<_MainScreenState>();
-
-class MainScreen extends StatefulWidget {
+class MainScreen extends ConsumerWidget {
   const MainScreen({super.key});
 
   @override
-  _MainScreenState createState() => _MainScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final int currentIndex = ref.watch(tabIndexProvider); 
+    final growthState = ref.watch(bacterialGrowthProvider);
 
-class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
-  late final List<Widget> _pages;
-
-  @override
-  void initState() {
-    super.initState();
-    _pages = [
+    final List<Widget> pages = [
       DashboardView(),
       InsightsView(),
       NotificationsView(),
       ProfileView(),
       SettingsView(),
-    ]; 
-
-    // addPostFrameCallback to prevent notifyListeners() error
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authViewModel = context.read<AuthViewModel>();
-      if (authViewModel.firebaseUser != null) {
-        authViewModel.fetchAllUserData(authViewModel.firebaseUser!.uid);
-      }
-    });
-  }
-
-  void onTabTapped(int index) {
-    setState(() => _currentIndex = index);
-  }
-
-  void reset() {
-    setState(() => _currentIndex = 0);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final growthVM = context.watch<BacterialGrowthViewModel>();
+    ];
 
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
+        index: currentIndex,
+        children: pages,
       ),
       bottomNavigationBar: BottomNavbar(
-        currentIndex: _currentIndex,
-        latestState: growthVM.currentState,
-        onTabTapped: onTabTapped,
+        currentIndex: currentIndex,
+        latestState: growthState.currentState,
+        onTabTapped: (index) => ref.read(tabIndexProvider.notifier).state = index, // ✅ Update tab state
       ),
     );
   }

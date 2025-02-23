@@ -1,35 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:patchnotes/viewmodels/dashboard_viewmodel.dart';
-import 'package:patchnotes/views/mainscreen.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:patchnotes/providers/bg_provider.dart';
+import 'package:patchnotes/providers/bluetooth_provider.dart';
+import 'package:patchnotes/states/bg_state.dart';
+import '../providers/navigation.dart';
 import '../widgets/top_navbar.dart';
 import '../bluetooth/scanner.dart';
-import '../bluetooth/manager.dart';
 
-class DashboardView extends StatelessWidget {
+class DashboardView extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    final growthVM = Provider.of<BacterialGrowthViewModel>(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final growthState = ref.watch(bacterialGrowthProvider);
+    final tabIndexNotifier = ref.read(tabIndexProvider.notifier); 
 
     return Scaffold(
       appBar: const Header(title: "Dashboard"),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildStateIndicator(growthVM),
+          _buildStateIndicator(growthState),
           const SizedBox(height: 10),
-          _buildChart(growthVM),
+          _buildChart(growthState),
           const SizedBox(height: 20),
-          _buildActionButtons(context),
+          _buildActionButtons(context, tabIndexNotifier),
         ],
       ),
     );
   }
 
-  Widget _buildStateIndicator(BacterialGrowthViewModel growthVM) {
-    String state = growthVM.currentState;
+  Widget _buildStateIndicator(BacterialGrowthState growthState) {
+    String state = growthState.currentState;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       margin: const EdgeInsets.only(bottom: 10),
@@ -48,8 +50,8 @@ class DashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildChart(BacterialGrowthViewModel growthVM) {
-    List<FlSpot> chartData = growthVM.dataPoints
+  Widget _buildChart(BacterialGrowthState growthState) {
+    List<FlSpot> chartData = growthState.dataPoints
         .map((point) => FlSpot(point.time, point.growthRate))
         .toList();
 
@@ -103,51 +105,59 @@ class DashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
-    return Consumer<BluetoothManager>(
-      builder: (context, bluetoothManager, child) {
-        BluetoothDevice? connectedDevice = bluetoothManager.connectedDevice;
-        bool isConnected = connectedDevice != null;
+    Widget _buildActionButtons(BuildContext context, StateController<int> tabIndexNotifier) {
+  return Consumer(
+    builder: (context, ref, child) {
+      final bluetoothState = ref.watch(bluetoothProvider);
+      final bluetoothNotifier = ref.watch(bluetoothProvider.notifier); // Ensure UI rebuilds when state updates
+      BluetoothDevice? connectedDevice = bluetoothState.connectedDevice;
+      bool isConnected = connectedDevice != null;
 
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildElevatedButton("Patient History", () {
-              mainScreenKey.currentState?.onTabTapped(1);
-            }),
-            _buildElevatedButton(
-              isConnected ? "Disconnect Device" : "Sync Device",
-              () async {
-                if (!isConnected) {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ScannerPage(
-                        onDeviceSelected: (device) async {
-                          if (device != null) {
-                            bool success =
-                                await bluetoothManager.connectToDevice(device);
-                            if (!success) {
-                              print("Device selection canceled or failed.");
-                            }
-                          } else {
-                            print("No device selected.");
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildElevatedButton("Patient History", () {
+            tabIndexNotifier.state = 1;
+          }),
+          _buildElevatedButton(
+            isConnected ? "Disconnect Device" : "Sync Device",
+            () async {
+              if (!isConnected) {
+                final selectedDevice = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ScannerPage(
+                      onDeviceSelected: (device) async {
+                        if (device != null) {
+                          bool success = await bluetoothNotifier.connectToDevice(device);
+                          if (!success) {
+                            print("Device selection canceled or failed.");
                           }
-                        },
-                      ),
+                        } else {
+                          print("No device selected.");
+                        }
+                      },
                     ),
-                  );
-                } else {
-                  await bluetoothManager.disconnectDevice();
+                  ),
+                );
+
+                if (selectedDevice != null) {
+                  ref.refresh(bluetoothProvider); 
                 }
-              },
-              color: isConnected ? Colors.red : const Color(0xFF5B9BD5),
-            ),
-          ],
-        );
-      },
-    );
-  }
+              } else {
+                await bluetoothNotifier.disconnectDevice();
+                ref.refresh(bluetoothProvider);
+              }
+            },
+            color: isConnected ? Colors.red : const Color(0xFF5B9BD5),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
 
   Widget _buildElevatedButton(String text, VoidCallback? onPressed,
       {Color color = const Color(0xFF5B9BD5)}) {

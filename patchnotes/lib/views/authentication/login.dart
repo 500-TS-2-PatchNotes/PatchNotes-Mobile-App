@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../viewmodels/auth_viewmodel.dart';
-import '../mainscreen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:patchnotes/providers/auth_provider.dart';
 
-class LoginPageMobile extends StatefulWidget {
+class LoginPageMobile extends ConsumerStatefulWidget {
   const LoginPageMobile({super.key});
 
   @override
   _LoginPageMobileState createState() => _LoginPageMobileState();
 }
 
-class _LoginPageMobileState extends State<LoginPageMobile> {
+class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -24,7 +23,15 @@ class _LoginPageMobileState extends State<LoginPageMobile> {
 
   @override
   Widget build(BuildContext context) {
-    final authViewModel = context.watch<AuthViewModel>();
+    final authState = ref.watch(authProvider);
+    final authNotifier = ref.read(authProvider.notifier);
+
+    ref.listen(authProvider, (previous, next) {
+      if (next.firebaseUser != null) {
+        Navigator.pushReplacementNamed(context, "/home");
+      }
+    });
+
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
     final double textSize = screenWidth * 0.05;
@@ -64,12 +71,10 @@ class _LoginPageMobileState extends State<LoginPageMobile> {
                       SizedBox(height: screenHeight * 0.04),
 
                       // Email Field
-                      _buildTextField(emailController, "Email", false,
-                          screenWidth, inputHeight),
+                      _buildTextField(emailController, "Email", false, screenWidth, inputHeight),
 
                       // Password Field
-                      _buildTextField(passwordController, "Password", true,
-                          screenWidth, inputHeight),
+                      _buildTextField(passwordController, "Password", true, screenWidth, inputHeight),
                       SizedBox(height: screenHeight * 0.03),
 
                       // Login Button
@@ -79,39 +84,20 @@ class _LoginPageMobileState extends State<LoginPageMobile> {
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF9696D9),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
-                          onPressed: authViewModel.isLoading
+                          onPressed: authState.isLoading
                               ? null
                               : () async {
                                   if (_formKey.currentState!.validate()) {
-                                    bool success = await context
-                                        .read<AuthViewModel>()
-                                        .login(
+                                    await authNotifier.login(
                                       emailController.text.trim(),
                                       passwordController.text.trim(),
-                                      context
                                     );
 
-                                    if (success) {
-                                      mainScreenKey.currentState?.reset();
-                                      Navigator.pushReplacementNamed(
-                                          context, "/home");
-                                    } else {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                              authViewModel.errorMessage ??
-                                                  "Login failed"),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                    }
                                   }
                                 },
-                          child: authViewModel.isLoading
+                          child: authState.isLoading
                               ? CircularProgressIndicator(color: Colors.white)
                               : Text(
                                   'Login',
@@ -127,7 +113,7 @@ class _LoginPageMobileState extends State<LoginPageMobile> {
                       // Forgot Password
                       TextButton(
                         onPressed: () {
-                          // Need to Implement Functionality Here... 
+                          // Implement Forgot Password Functionality
                         },
                         child: Text(
                           'Forgot Password?',
@@ -187,8 +173,7 @@ class _LoginPageMobileState extends State<LoginPageMobile> {
           if (value == null || value.isEmpty) {
             return "Please enter your $hintText";
           }
-          if (hintText == "Email" &&
-              !RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+          if (hintText == "Email" && !RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
             return 'Please enter a valid email';
           }
           if (hintText == "Password" && value.length < 6) {

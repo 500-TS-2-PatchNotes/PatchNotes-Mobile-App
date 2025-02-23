@@ -1,110 +1,172 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:patchnotes/views/mainscreen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:patchnotes/providers/navigation.dart';
+import 'package:patchnotes/providers/user_provider.dart';
 import '../widgets/top_navbar.dart';
-import '../../viewmodels/profile_viewmodel.dart';
 
-class ProfileView extends StatelessWidget {
+class ProfileView extends ConsumerStatefulWidget {
+  @override
+  _ProfileViewState createState() => _ProfileViewState();
+}
+
+class _ProfileViewState extends ConsumerState<ProfileView> {
+  late TextEditingController _bioController;
+  late TextEditingController _notesController;
+
+  @override
+  void initState() {
+    super.initState();
+    final userState = ref.read(userProvider);
+    _bioController = TextEditingController(text: userState.account?.bio ?? "");
+    _notesController =
+        TextEditingController(text: userState.account?.medNote ?? "");
+  }
+
+  @override
+  void dispose() {
+    _bioController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _updateProfilePicture(UserNotifier userNotifier) async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile == null) return;
+
+    final imageBytes = await pickedFile.readAsBytes();
+
+    // Check if the widget is still mounted before proceeding
+    if (!mounted) return;
+
+    // Update the state immediately with a temporary placeholder value
+    setState(() {
+      final currentState = ref.read(userProvider);
+      ref.read(userProvider.notifier).state = currentState.copyWith(
+        appUser: currentState.appUser?.copyWith(profilePic: "local_temp"),
+      );
+    });
+
+    // Update Firestore with the new profile picture
+    await userNotifier.updateProfilePicture(imageBytes);
+
+    // Check again if mounted before loading updated user data
+    if (!mounted) return;
+
+    await ref.read(userProvider.notifier).loadUserData();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final profileVM = Provider.of<ProfileViewModel>(context);
+    final userState = ref.watch(userProvider);
+    final userNotifier = ref.read(userProvider.notifier);
+    final navigatorKey = ref.read(navigatorKeyProvider);
 
-    TextEditingController bioController =
-        TextEditingController(text: profileVM.bio);
-    TextEditingController notesController =
-        TextEditingController(text: profileVM.medicalNotes);
+    final account = userState.account;
+    final appUser = userState.appUser;
 
     return Scaffold(
       appBar: const Header(title: "Profile"),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Profile Picture
+            // **Profile Picture**
+            // After: Profile Picture rendering in ProfileView with empty image handling
             GestureDetector(
-              onTap: profileVM.pickImage,
+              onTap: () => _updateProfilePicture(userNotifier),
               child: CircleAvatar(
                 radius: 50,
-                backgroundColor: Colors.grey[300], // Ensures background color
-                child: profileVM.profileImage.isNotEmpty
-                    ? ClipOval(
-                        child: Image.file(
-                          File(profileVM.profileImage),
-                          width: 100, // Ensure full circle fit
+                backgroundColor: Colors.grey[300],
+                child: ClipOval(
+                  child: appUser?.profilePic != null &&
+                          appUser!.profilePic!.isNotEmpty &&
+                          appUser.profilePic! != "local_temp"
+                      ? Image.network(
+                          "${appUser.profilePic!}?t=${DateTime.now().millisecondsSinceEpoch}", // Force reload
+                          width: 100,
                           height: 100,
                           fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.account_circle,
+                              size: 100,
+                              color: Colors.grey,
+                            );
+                          },
+                        )
+                      : const Icon(
+                          Icons.person,
+                          size: 100,
+                          color: Colors.grey,
                         ),
-                      )
-                    : Icon(Icons.person,
-                        size: 50, color: Colors.white), // Default icon
+                ),
               ),
             ),
 
-            SizedBox(height: 10),
-            Text(profileVM.displayName,
-                style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black)),
-            Text(profileVM.email,
-                style: TextStyle(fontSize: 16, color: Colors.grey)),
-            SizedBox(height: 16),
+            const SizedBox(height: 10),
+            Text(
+              appUser?.fName ?? "User",
+              style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black),
+            ),
+            Text(
+              appUser?.email ?? "No Email",
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
 
-            // Bio Section
+            // **Bio Section**
             _buildEditableCard(
               title: "Bio",
               icon: Icons.info,
-              isEditing: profileVM.isEditingBio,
-              controller: bioController,
-              value: profileVM.bio,
+              controller: _bioController,
+              value: account?.bio ?? "No bio available",
               onSave: () {
-                profileVM.updateBio(bioController.text);
-                profileVM.toggleBioEditing();
+                userNotifier.updateBio(_bioController.text);
               },
-              onEdit: profileVM.toggleBioEditing,
             ),
 
-            SizedBox(height: 5),
-            // Device Status & Wound Status
-            _buildInfoCard("Device Status", profileVM.deviceStatus,
-                Icons.bluetooth_connected),
-            SizedBox(height: 5),
+            const SizedBox(height: 5),
+            // **Device Status & Wound Status**
             _buildInfoCard(
-                "Wound Status", profileVM.woundStatus, Icons.healing),
-            SizedBox(height: 5),
+                "Device Status", "Connected", Icons.bluetooth_connected),
+            const SizedBox(height: 5),
+            _buildInfoCard("Wound Status", account?.woundStatus ?? "Unknown",
+                Icons.healing),
+            const SizedBox(height: 5),
 
-            // Medical Notes Section
+            // **Medical Notes Section**
             _buildEditableCard(
               title: "Medical Notes",
               icon: Icons.notes,
-              isEditing: profileVM.isEditingNotes,
-              controller: notesController,
-              value: profileVM.medicalNotes,
+              controller: _notesController,
+              value: account?.medNote ?? "No medical notes available",
               onSave: () {
-                profileVM.updateMedicalNotes(notesController.text);
-                profileVM.toggleNotesEditing();
+                userNotifier.updateMedicalNotes(_notesController.text);
               },
-              onEdit: profileVM.toggleNotesEditing,
             ),
 
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-            // Settings Button
+            // **Settings Button**
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF5B9BD5),
+                backgroundColor: const Color(0xFF5B9BD5),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                    borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                 elevation: 5,
               ),
               onPressed: () {
-                mainScreenKey.currentState?.onTabTapped(4);
+                ref.read(tabIndexProvider.notifier).state = 4;
               },
-              icon: Icon(Icons.settings, color: Colors.white),
-              label: Text('Change Settings',
+              icon: const Icon(Icons.settings, color: Colors.white),
+              label: const Text('Change Settings',
                   style: TextStyle(color: Colors.white)),
             ),
           ],
@@ -113,14 +175,13 @@ class ProfileView extends StatelessWidget {
     );
   }
 
+  /// **Editable Field Card**
   Widget _buildEditableCard({
     required String title,
     required IconData icon,
-    required bool isEditing,
     required TextEditingController controller,
     required String value,
     required VoidCallback onSave,
-    required VoidCallback onEdit,
   }) {
     return Card(
       color: Colors.white,
@@ -128,51 +189,39 @@ class ProfileView extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: Stack(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
-                Row(
-                  children: [
-                    Icon(icon, color: Color(0xFF5B9BD5)),
-                    SizedBox(width: 10),
-                    Text(title,
-                        style: TextStyle(
-                            fontWeight: FontWeight.w400, color: Colors.black)),
-                  ],
-                ),
-                SizedBox(height: 5),
-                isEditing
-                    ? TextField(
-                        controller: controller,
-                        maxLines: 4,
-                        decoration: InputDecoration(
-                          hintText: "Enter $title...",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF5B9BD5)),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          contentPadding: EdgeInsets.all(10),
-                        ),
-                      )
-                    : Text(value,
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black)),
+                Icon(icon, color: const Color(0xFF5B9BD5)),
+                const SizedBox(width: 10),
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w400, color: Colors.black)),
               ],
             ),
-            Positioned(
-              top: 0,
-              right: 0,
-              child: IconButton(
-                icon: Icon(isEditing ? Icons.check : Icons.edit,
-                    color: Color(0xFF5B9BD5)),
-                onPressed: isEditing ? onSave : onEdit,
+            const SizedBox(height: 5),
+            TextField(
+              controller: controller,
+              maxLines: 4,
+              decoration: InputDecoration(
+                hintText: "Enter $title...",
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Color(0xFF5B9BD5)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.all(10),
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: TextButton(
+                onPressed: onSave,
+                child: const Text("Save",
+                    style: TextStyle(color: Color(0xFF5B9BD5))),
               ),
             ),
           ],
@@ -181,17 +230,19 @@ class ProfileView extends StatelessWidget {
     );
   }
 
+  /// **Info Display Card**
   Widget _buildInfoCard(String title, String value, IconData icon) {
     return Card(
       color: Colors.white,
       elevation: 5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        leading: Icon(icon, color: Color(0xFF5B9BD5)),
+        leading: Icon(icon, color: const Color(0xFF5B9BD5)),
         title: Text(title,
-            style: TextStyle(fontWeight: FontWeight.w400, color: Colors.black)),
+            style: const TextStyle(
+                fontWeight: FontWeight.w400, color: Colors.black)),
         subtitle: Text(value,
-            style: TextStyle(
+            style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: Colors.black)),

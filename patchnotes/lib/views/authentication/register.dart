@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import '../../viewmodels/auth_viewmodel.dart';
+import 'package:patchnotes/providers/auth_provider.dart';
 
-class RegisterPageMobile extends StatefulWidget {
+class RegisterPageMobile extends ConsumerStatefulWidget {
   const RegisterPageMobile({super.key});
 
   @override
   _RegisterPageMobileState createState() => _RegisterPageMobileState();
 }
 
-class _RegisterPageMobileState extends State<RegisterPageMobile> {
+class _RegisterPageMobileState extends ConsumerState<RegisterPageMobile> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  bool _isSubmitting = false; // Tracks if form is being submitted
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -28,42 +28,44 @@ class _RegisterPageMobileState extends State<RegisterPageMobile> {
     super.dispose();
   }
 
-  Future<void> _registerUser(BuildContext context) async {
-    final authViewModel = context.read<AuthViewModel>();
+  Future<void> _registerUser() async {
+  final authNotifier = ref.read(authProvider.notifier);
+  
+  if (_formKey.currentState!.validate()) {
+    setState(() => _isSubmitting = true);
 
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isSubmitting = true;
+    await authNotifier.register(
+      emailController.text.trim(),
+      passwordController.text.trim(),
+      firstNameController.text.trim(),
+      lastNameController.text.trim(),
+    );
+
+    final authState = ref.read(authProvider);
+
+    if (authState.firebaseUser != null) {
+      _showToast("Registration successful! Redirecting to login...", Colors.green);
+
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, "/login");
+        }
       });
+    } else {
+      _showToast(authState.errorMessage ?? "Registration failed", Colors.red);
+    }
 
-      bool success = await authViewModel.register(
-        emailController.text.trim(),
-        passwordController.text.trim(),
-        firstNameController.text.trim(),
-        lastNameController.text.trim(),
-      );
-
-      if (success) {
-        _showToast("Registration successful! Redirecting to login...", Colors.green);
-
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            Navigator.pushReplacementNamed(context, "/login");
-          }
-        });
-      } else {
-        _showToast(authViewModel.errorMessage ?? "Registration failed", Colors.red);
-      }
-
-      setState(() {
-        _isSubmitting = false;
-      });
+    // ✅ Ensure `_isSubmitting` is false, so button reactivates
+    if (mounted) {
+      setState(() => _isSubmitting = false);
     }
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
-    final authViewModel = context.watch<AuthViewModel>();
+    final authState = ref.watch(authProvider); 
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
     final double textSize = screenWidth * 0.05;
@@ -111,8 +113,8 @@ class _RegisterPageMobileState extends State<RegisterPageMobile> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    onPressed: _isSubmitting || authViewModel.isLoading ? null : () => _registerUser(context),
-                    child: _isSubmitting || authViewModel.isLoading
+                    onPressed: _isSubmitting || authState.isLoading ? null : _registerUser,
+                    child: _isSubmitting || authState.isLoading
                         ? CircularProgressIndicator(color: Colors.white)
                         : Text(
                             'Register',

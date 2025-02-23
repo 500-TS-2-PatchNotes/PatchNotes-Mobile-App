@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:patchnotes/viewmodels/notifications_viewmodel.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:patchnotes/providers/user_provider.dart';
 import '../widgets/top_navbar.dart';
 
-class NotificationsView extends StatelessWidget {
+class NotificationsView extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    final notificationsVM = Provider.of<NotificationsViewModel>(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notifications = ref.watch(userProvider).account?.notifications ?? [];
 
     return Scaffold(
       appBar: const Header(title: "Notifications"),
-      body: notificationsVM.notifications.isEmpty
+      body: notifications.isEmpty
           ? const Center(child: Text('No notifications'))
           : ListView.builder(
-              itemCount: notificationsVM.notifications.length,
+              itemCount: notifications.length,
               itemBuilder: (context, index) {
-                final item = notificationsVM.notifications[index];
+                final item = notifications[index];
 
                 return Dismissible(
                   key: Key(item.id),
@@ -33,7 +33,7 @@ class NotificationsView extends StatelessWidget {
                   ),
                   confirmDismiss: (direction) async {
                     if (direction == DismissDirection.startToEnd) {
-                      notificationsVM.markAsSeen(index);
+                      ref.read(userProvider.notifier).markNotificationAsSeen(index);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('"${item.title}" marked as seen')),
                       );
@@ -45,7 +45,7 @@ class NotificationsView extends StatelessWidget {
                   },
                   onDismissed: (direction) {
                     if (direction == DismissDirection.endToStart) {
-                      notificationsVM.removeNotification(index);
+                      ref.read(userProvider.notifier).removeNotification(index);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Notification dismissed')),
                       );
@@ -59,7 +59,7 @@ class NotificationsView extends StatelessWidget {
                       trailing: TextButton(
                         child: const Text('Mark as Seen'),
                         onPressed: () {
-                          notificationsVM.markAsSeen(index);
+                          ref.read(userProvider.notifier).markNotificationAsSeen(index);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('"${item.title}" marked as seen')),
                           );

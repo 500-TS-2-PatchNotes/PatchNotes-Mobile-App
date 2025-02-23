@@ -74,9 +74,6 @@ class AuthService {
   // This is a getter function that returns the current user
   User? get currentUser => _auth.currentUser;
 
-  // Implement Change Email Method
-
-  // Implement Change Password Method
-
-  // Implement Forgot Password Method
 }
+
+

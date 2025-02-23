@@ -1,107 +1,124 @@
 import 'package:flutter/material.dart';
-import 'package:patchnotes/viewmodels/dashboard_viewmodel.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:patchnotes/providers/bg_provider.dart';
 import '../widgets/top_navbar.dart';
 import '../utils/testImage.dart';
 
-class InsightsView extends StatelessWidget {
+class InsightsView extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    final growthVM = Provider.of<BacterialGrowthViewModel>(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final growthState = ref.watch(bacterialGrowthProvider);
+
     return Scaffold(
-      appBar: Header(title: "Insights"),
+      appBar: const Header(title: "Insights"),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE6E6FA),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                _getStatusMessage(growthVM.currentState),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
+            _buildStatusContainer(growthState.currentState),
             const SizedBox(height: 10),
 
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8),
-              child: Text(
-                'Most Recent Wound Images',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-            ),
+            _buildSectionTitle('Most Recent Wound Images'),
             const SizedBox(height: 16),
-
-            // Grid of Wound Images using RandomWoundImageWidget
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: 9,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 1.5,
-                ),
-                itemBuilder: (context, index) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade400),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const RandomWoundImageWidget(),
-                  );
-                },
-              ),
-            ),
+            _buildImageGrid(),
             const SizedBox(height: 24),
 
-            // Tip Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  _getTip(growthVM.currentState),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontStyle: FontStyle.italic,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
+            _buildTipContainer(growthState.currentState),
             const SizedBox(height: 24),
 
-            // Last Synced Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text(
-                'Last synced: ${_formatDateTime(DateTime.now())}',
-                style: const TextStyle(fontSize: 14, color: Colors.grey),
-                textAlign: TextAlign.center,
-              ),
-            ),
+            _buildLastSyncedInfo(),
             const SizedBox(height: 24),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildStatusContainer(String state) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE6E6FA),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        _getStatusMessage(state),
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.black,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _buildImageGrid() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: 9,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+          childAspectRatio: 1.5,
+        ),
+        itemBuilder: (context, index) {
+          return Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade400),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const RandomWoundImageWidget(),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTipContainer(String state) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          _getTip(state),
+          style: const TextStyle(
+            fontSize: 16,
+            fontStyle: FontStyle.italic,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLastSyncedInfo() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Text(
+        'Last synced: ${_formatDateTime(DateTime.now())}',
+        style: const TextStyle(fontSize: 14, color: Colors.grey),
+        textAlign: TextAlign.center,
       ),
     );
   }
