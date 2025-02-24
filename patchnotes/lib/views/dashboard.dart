@@ -9,12 +9,19 @@ import '../providers/navigation.dart';
 import '../widgets/top_navbar.dart';
 import '../bluetooth/scanner.dart';
 
-class DashboardView extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final growthState = ref.watch(bacterialGrowthProvider);
-    final tabIndexNotifier = ref.read(tabIndexProvider.notifier); 
+class DashboardView extends ConsumerStatefulWidget {
+  const DashboardView({Key? key}) : super(key: key);
 
+  @override
+  _DashboardViewState createState() => _DashboardViewState();
+}
+
+class _DashboardViewState extends ConsumerState<DashboardView> {
+  @override
+  Widget build(BuildContext context) {
+    final growthState = ref.watch(bacterialGrowthProvider);
+    final tabIndexNotifier = ref.read(tabIndexProvider.notifier);
+    
     return Scaffold(
       appBar: const Header(title: "Dashboard"),
       body: Column(
@@ -24,6 +31,7 @@ class DashboardView extends ConsumerWidget {
           const SizedBox(height: 10),
           _buildChart(growthState),
           const SizedBox(height: 20),
+          const SizedBox(height: 10),
           _buildActionButtons(context, tabIndexNotifier),
         ],
       ),
@@ -105,74 +113,114 @@ class DashboardView extends ConsumerWidget {
     );
   }
 
-    Widget _buildActionButtons(BuildContext context, StateController<int> tabIndexNotifier) {
-  return Consumer(
-    builder: (context, ref, child) {
-      final bluetoothState = ref.watch(bluetoothProvider);
-      final bluetoothNotifier = ref.watch(bluetoothProvider.notifier); // Ensure UI rebuilds when state updates
-      BluetoothDevice? connectedDevice = bluetoothState.connectedDevice;
-      bool isConnected = connectedDevice != null;
+  Widget _buildActionButtons(
+      BuildContext context, StateController<int> tabIndexNotifier) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final bluetoothState = ref.watch(bluetoothProvider);
+        final bluetoothNotifier = ref.watch(bluetoothProvider.notifier);
+        BluetoothDevice? connectedDevice = bluetoothState.connectedDevice;
+        bool isConnected = connectedDevice != null;
 
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildElevatedButton("Patient History", () {
-            tabIndexNotifier.state = 1;
-          }),
-          _buildElevatedButton(
-            isConnected ? "Disconnect Device" : "Sync Device",
-            () async {
-              if (!isConnected) {
-                final selectedDevice = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ScannerPage(
-                      onDeviceSelected: (device) async {
-                        if (device != null) {
-                          bool success = await bluetoothNotifier.connectToDevice(device);
-                          if (!success) {
-                            print("Device selection canceled or failed.");
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5B9BD5),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+                elevation: 5,
+              ),
+              onPressed: () {
+                tabIndexNotifier.state = 1;
+              },
+              icon: const Icon(Icons.history, color: Colors.white),
+              label: const Text('Patient History',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold)),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    isConnected ? Colors.red : const Color(0xFF5B9BD5),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+                elevation: 5,
+              ),
+              onPressed: () async {
+                if (!isConnected) {
+                  final selectedDevice = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ScannerPage(
+                        onDeviceSelected: (device) async {
+                          if (device != null) {
+                            bool success =
+                                await bluetoothNotifier.connectToDevice(device);
+                            if (success) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      "Device connected successfully!",
+                                      textAlign: TextAlign.center),
+                                  backgroundColor: Colors.green,
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Failed to connect device.",
+                                      textAlign: TextAlign.center),
+                                  backgroundColor: Colors.red,
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
                           }
-                        } else {
-                          print("No device selected.");
-                        }
-                      },
+                        },
+                      ),
                     ),
-                  ),
-                );
+                  );
 
-                if (selectedDevice != null) {
-                  ref.refresh(bluetoothProvider); 
+                  if (selectedDevice != null) {
+                    ref.refresh(bluetoothProvider);
+                  }
+                } else {
+                  await bluetoothNotifier.disconnectDevice();
+                  ref.refresh(bluetoothProvider);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Device disconnected.",
+                          textAlign: TextAlign.center),
+                      backgroundColor: Colors.red,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
                 }
-              } else {
-                await bluetoothNotifier.disconnectDevice();
-                ref.refresh(bluetoothProvider);
-              }
-            },
-            color: isConnected ? Colors.red : const Color(0xFF5B9BD5),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-
-
-  Widget _buildElevatedButton(String text, VoidCallback? onPressed,
-      {Color color = const Color(0xFF5B9BD5)}) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color.withOpacity(0.8),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
+              },
+              icon: Icon(
+                isConnected ? Icons.bluetooth_disabled : Icons.bluetooth,
+                color: Colors.white,
+              ),
+              label: Text(
+                isConnected ? "Disconnect Device" : "Sync Device",
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -182,9 +230,9 @@ class DashboardView extends ConsumerWidget {
         return Colors.cyan.withOpacity(0.5);
       case 'Observation':
         return Colors.amber.withOpacity(0.5);
-      case 'Early Infection':
+      case 'Early':
         return Colors.orange.withOpacity(0.5);
-      case 'Severe Infection':
+      case 'Severe':
         return Colors.red.withOpacity(0.5);
       case 'Critical':
         return Colors.purple.withOpacity(0.5);

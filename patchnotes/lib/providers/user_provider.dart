@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:patchnotes/providers/auth_provider.dart';
+import 'package:patchnotes/providers/bg_provider.dart';
 import 'package:patchnotes/states/user_state.dart';
 import '../services/firestore_service.dart';
 import '../services/firebase_storage.dart';
@@ -13,8 +14,10 @@ import '../models/collections/wound.dart';
 import '../models/notifications_model.dart';
 
 // Firestore & Storage Providers
-final firestoreServiceProvider = Provider<FirestoreService>((ref) => FirestoreService());
-final firebaseStorageServiceProvider = Provider<FirebaseStorageService>((ref) => FirebaseStorageService());
+final firestoreServiceProvider =
+    Provider<FirestoreService>((ref) => FirestoreService());
+final firebaseStorageServiceProvider =
+    Provider<FirebaseStorageService>((ref) => FirebaseStorageService());
 
 // StreamProvider for Authentication Changes
 final authStateProvider = StreamProvider<User?>((ref) {
@@ -26,71 +29,83 @@ final authStateProvider = StreamProvider<User?>((ref) {
 final userProvider = StateNotifierProvider<UserNotifier, UserState>((ref) {
   final firestoreService = ref.read(firestoreServiceProvider);
   final storageService = ref.read(firebaseStorageServiceProvider);
-  final notifier = UserNotifier(firestoreService, storageService);
-
-  // Correcting listen usage
+  final notifier = UserNotifier(ref, firestoreService, storageService);
+  
+  // Listen to auth state changes.
   ref.listen<AsyncValue<User?>>(authStateProvider, (previous, next) {
     notifier.handleAuthStateChanged(next.value);
   });
-
+  
   return notifier;
 });
 
+
 class UserNotifier extends StateNotifier<UserState> {
+  final Ref ref; 
   final FirestoreService _firestoreService;
   final FirebaseStorageService _storageService;
 
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSubscription;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _accountSubscription;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _woundSubscription;
-
-  UserNotifier(this._firestoreService, this._storageService) : super(UserState());
-
+  
+  UserNotifier(this.ref, this._firestoreService, this._storageService) : super(UserState());
+  
   void handleAuthStateChanged(User? user) {
-  if (user == null) {
-    print("🛑 User is null, canceling Firestore listeners.");
-    resetUserData();  // 🔥 Ensure listeners are properly canceled
-  } else {
-    print("✅ User logged in: Listening to Firestore updates.");
-    _listenToUserChanges(user.uid);
+    if (user == null) {
+      // When logged out, pause the graph simulation.
+      ref.read(bacterialGrowthProvider.notifier).pauseGraph();
+      resetUserData();
+    } else {
+      // When logged in, resume the graph simulation.
+      ref.read(bacterialGrowthProvider.notifier).resumeGraph();
+      _listenToUserChanges(user.uid);
+    }
   }
-}
-
-
 
   void _listenToUserChanges(String uid) {
     _cancelSubscriptions();
     state = state.copyWith(uid: uid);
 
-    _userSubscription = _firestoreService.userCollection.doc(uid).snapshots().listen(
+    _userSubscription =
+        _firestoreService.userCollection.doc(uid).snapshots().listen(
       (snapshot) {
         if (snapshot.exists && snapshot.data() != null) {
-          state = state.copyWith(appUser: AppUser.fromMap(snapshot.data()! as Map<String, dynamic>?));
+          state = state.copyWith(
+              appUser:
+                  AppUser.fromMap(snapshot.data()! as Map<String, dynamic>?));
         }
       },
-      onError: (error) => state = state.copyWith(errorMessage: "User data stream error: $error"),
+      onError: (error) => state =
+          state.copyWith(errorMessage: "User data stream error: $error"),
     ) as StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?;
 
-    _accountSubscription = _firestoreService.accountCollection.doc(uid).snapshots().listen(
+    _accountSubscription =
+        _firestoreService.accountCollection.doc(uid).snapshots().listen(
       (snapshot) {
         if (snapshot.exists && snapshot.data() != null) {
-          state = state.copyWith(account: Account.fromMap(snapshot.data()! as Map<String, dynamic>?));
+          state = state.copyWith(
+              account:
+                  Account.fromMap(snapshot.data()! as Map<String, dynamic>?));
         }
       },
-      onError: (error) => state = state.copyWith(errorMessage: "Account data stream error: $error"),
+      onError: (error) => state =
+          state.copyWith(errorMessage: "Account data stream error: $error"),
     ) as StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?;
 
-    _woundSubscription = _firestoreService.woundCollection.doc(uid).snapshots().listen(
+    _woundSubscription =
+        _firestoreService.woundCollection.doc(uid).snapshots().listen(
       (snapshot) {
         if (snapshot.exists && snapshot.data() != null) {
-          state = state.copyWith(wound: Wound.fromMap(snapshot.data()! as Map<String, dynamic>?));
+          state = state.copyWith(
+              wound: Wound.fromMap(snapshot.data()! as Map<String, dynamic>?));
         }
       },
-      onError: (error) => state = state.copyWith(errorMessage: "Wound data stream error: $error"),
+      onError: (error) => state =
+          state.copyWith(errorMessage: "Wound data stream error: $error"),
     ) as StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?;
   }
 
-  // **🚀 Load User Data (Only When Necessary)**
   Future<void> loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -98,7 +113,6 @@ class UserNotifier extends StateNotifier<UserState> {
       return;
     }
 
-    // **Prevent unnecessary API calls**
     if (state.appUser != null && state.account != null && state.wound != null)
       return;
 
@@ -172,7 +186,7 @@ class UserNotifier extends StateNotifier<UserState> {
     }
   }
 
-  /// **🔔 Mark Notification as Seen**
+  /// Mark Notification as Seen
   void markNotificationAsSeen(int index) {
     if (state.account == null || state.account!.notifications.isEmpty) return;
 
@@ -188,7 +202,7 @@ class UserNotifier extends StateNotifier<UserState> {
     _firestoreService.updateAccount(state.uid!, state.account!.toFirestore());
   }
 
-  /// **❌ Remove Notification**
+  /// Remove Notification
   void removeNotification(int index) {
     if (state.account == null || state.account!.notifications.isEmpty) return;
 
@@ -202,30 +216,30 @@ class UserNotifier extends StateNotifier<UserState> {
     _firestoreService.updateAccount(state.uid!, state.account!.toFirestore());
   }
 
-  /// **📸 Upload & Update Profile Picture**
+  /// Upload & Update Profile Picture
   Future<void> updateProfilePicture(Uint8List imageBytes) async {
+    if (state.uid == null || state.appUser == null) return;
 
-  try {
-    final downloadUrl = await _storageService.uploadProfilePicture(state.uid!, imageBytes);
-    
-    if (downloadUrl != null) {
-      // ✅ Update state IMMEDIATELY after getting the new image URL
-      state = state.copyWith(
-        appUser: state.appUser!.copyWith(profilePic: downloadUrl),
-      );
-
-      // ✅ Save to Firestore in the background
-      await _firestoreService.updateUser(state.uid!, state.appUser!.toFirestore());
-    }
-  } catch (e) {
-    if (mounted) {
-      state = state.copyWith(errorMessage: "Failed to update profile picture: $e");
+    try {
+      // Upload the image and get the new download URL
+      final downloadUrl =
+          await _storageService.uploadProfilePicture(state.uid!, imageBytes);
+      if (downloadUrl != null) {
+        // Update local state (assuming you're using a StateNotifier)
+        state = state.copyWith(
+          appUser: state.appUser!.copyWith(profilePic: downloadUrl),
+        );
+        // Push the update to Firestore
+        await _firestoreService.updateUser(
+            state.uid!, state.appUser!.toFirestore());
+        print("Profile picture updated successfully");
+      }
+    } catch (e) {
+      state =
+          state.copyWith(errorMessage: "Failed to update profile picture: $e");
+      print("Error updating profile picture: $e");
     }
   }
-}
-
-
-
 
   Future<void> updateBio(String newBio) async {
     if (state.account == null) return;
@@ -237,7 +251,6 @@ class UserNotifier extends StateNotifier<UserState> {
         state.uid!, updatedAccount.toFirestore());
   }
 
-  /// **📋 Update Medical Notes**
   Future<void> updateMedicalNotes(String newNotes) async {
     if (state.account == null) return;
 
@@ -248,38 +261,65 @@ class UserNotifier extends StateNotifier<UserState> {
         state.uid!, updatedAccount.toFirestore());
   }
 
+  Future<void> updateWoundStatus(String newStatus) async {
+  if (state.uid == null || state.account == null || state.wound == null) return;
+
+  // Create updated versions of your models
+  final updatedAccount = state.account!.copyWith(woundStatus: newStatus);
+  final updatedWound = state.wound!.copyWith(woundStatus: newStatus);
+
+  // Update local state
+  state = state.copyWith(account: updatedAccount, wound: updatedWound);
+
+  // Push changes to Firestore (assuming your Firestore service supports these updates)
+  await _firestoreService.updateAccount(state.uid!, updatedAccount.toFirestore());
+  await _firestoreService.updateWound(state.uid!, updatedWound.toFirestore());
+}
+
   Future<void> deleteUserData(String uid) async {
+    try {
+      print("Deleting user data for UID: $uid");
+
+      await _firestoreService.userCollection.doc(uid).delete();
+      print("User document deleted");
+
+      await _firestoreService.accountCollection.doc(uid).delete();
+      print("Account document deleted");
+
+      await _firestoreService.woundCollection.doc(uid).delete();
+      print("Wound document deleted");
+    } catch (e) {
+      state = state.copyWith(errorMessage: "Failed to delete user data: $e");
+      print("Error deleting user data: $e");
+    }
+  }
+
+
+  Future<void> updateUserEmail(String uid, String newEmail) async {
   try {
-    print("Deleting user data for UID: $uid");
+    final firestore = ref.read(firestoreServiceProvider);
 
-    await _firestoreService.userCollection.doc(uid).delete();
-    print("User document deleted");
+    await firestore.userCollection.doc(uid).update({"email": newEmail});
 
-    await _firestoreService.accountCollection.doc(uid).delete();
-    print("Account document deleted");
-
-    await _firestoreService.woundCollection.doc(uid).delete();
-    print("Wound document deleted");
-
+    final updatedUser = state.appUser?.copyWith(email: newEmail);
+    state = state.copyWith(appUser: updatedUser);
   } catch (e) {
-    state = state.copyWith(errorMessage: "Failed to delete user data: $e");
-    print("Error deleting user data: $e");
+    throw Exception("Failed to update email in Firestore: $e");
   }
 }
 
 
   void resetUserData() {
-  _cancelSubscriptions();
-  state = UserState(); // ✅ Fully reset state
-  print("🔄 User data reset");
-}
+    _cancelSubscriptions();
+    state = UserState();
+    print("User data reset");
+  }
 
-void _cancelSubscriptions() {
-  _userSubscription?.cancel();
-  _accountSubscription?.cancel();
-  _woundSubscription?.cancel();
-  print("📴 Firestore listeners canceled");
-}
+  void _cancelSubscriptions() {
+    _userSubscription?.cancel();
+    _accountSubscription?.cancel();
+    _woundSubscription?.cancel();
+  }
 
   @override
   void dispose() {

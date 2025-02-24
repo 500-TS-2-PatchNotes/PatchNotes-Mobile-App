@@ -105,11 +105,11 @@ class BluetoothNotifier extends StateNotifier<AppBluetoothState> {
   Future<void> disconnectDevice() async {
   if (state.connectedDevice != null) {
     try {
-      await state.connectedDevice!.disconnect(); // ✅ Correct method to disconnect
-      state = state.copyWith(connectedDevice: null); // ✅ Proper state update
-      print("✅ Fully disconnected from device");
+      await state.connectedDevice!.disconnect(); 
+      state = state.copyWith(connectedDevice: null);
+      print("Fully disconnected from device");
     } catch (e) {
-      print("❌ Failed to disconnect: $e");
+      print("Failed to disconnect: $e");
     }
   }
 }

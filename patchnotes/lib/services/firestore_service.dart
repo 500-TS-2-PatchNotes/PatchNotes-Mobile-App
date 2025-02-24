@@ -10,7 +10,7 @@ class FirestoreService {
   final CollectionReference accountCollection = FirebaseFirestore.instance.collection('accounts');
   final CollectionReference woundCollection = FirebaseFirestore.instance.collection('wounds');
 
-  /// CREATE Operation **
+  /// CREATE Operation 
   Future<void> setUserData(String uid, AppUser user, Account account, Wound wound) async {
     WriteBatch batch = _db.batch();
 
@@ -33,7 +33,7 @@ class FirestoreService {
     }
   }
 
-  /// READ Operation **
+  /// READ Operation 
   Future<AppUser?> getUser(String uid) async {
     final data = await _getDocument(userCollection.doc(uid));
     return data != null ? AppUser.fromMap(data) : null;
@@ -49,7 +49,7 @@ class FirestoreService {
     return data != null ? Wound.fromMap(data) : null;
   }
 
-  /// UPDATE Operation **
+  /// UPDATE Operation 
   Future<void> updateUser(String uid, Map<String, dynamic> userData) async {
     await _updateDocument(userCollection.doc(uid), userData);
   }
@@ -62,7 +62,7 @@ class FirestoreService {
     await _updateDocument(woundCollection.doc(uid), woundData);
   }
 
-  /// DELETE Operation **
+  /// DELETE Operation 
   Future<void> deleteAllUserData(String uid) async {
     WriteBatch batch = _db.batch();
 
@@ -79,7 +79,7 @@ class FirestoreService {
     }
   }
 
-  /// Image Handling for Wounds **
+  /// Image Handling for Wounds 
   Future<void> addWoundImage(String uid, String imageUrl) async {
     try {
       await woundCollection.doc(uid).update({

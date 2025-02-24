@@ -32,7 +32,6 @@ class Account {
         notifications: [],
       );
     }
-
     return Account(
       bio: data['bio'] ?? "",
       woundStatus: data['woundStatus'] ?? "",

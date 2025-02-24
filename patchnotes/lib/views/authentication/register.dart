@@ -55,7 +55,6 @@ class _RegisterPageMobileState extends ConsumerState<RegisterPageMobile> {
       _showToast(authState.errorMessage ?? "Registration failed", Colors.red);
     }
 
-    // ✅ Ensure `_isSubmitting` is false, so button reactivates
     if (mounted) {
       setState(() => _isSubmitting = false);
     }
@@ -126,10 +125,10 @@ class _RegisterPageMobileState extends ConsumerState<RegisterPageMobile> {
                   ),
                 ),
 
-                // Redirects to the login page
+                // Goes directly into the MainScreen Page
                 TextButton(
                   onPressed: () {
-                    Navigator.pushReplacementNamed(context, "/login");
+                    Navigator.pushReplacementNamed(context, "/home", arguments: 0);
                   },
                   child: Text(
                     'Already have an account? Login',

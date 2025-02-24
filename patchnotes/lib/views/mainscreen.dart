@@ -9,19 +9,39 @@ import 'package:patchnotes/views/profile.dart';
 import 'package:patchnotes/views/settings.dart';
 import '../widgets/bottom_navbar.dart';
 
-class MainScreen extends ConsumerWidget {
-  const MainScreen({super.key});
+class MainScreen extends ConsumerStatefulWidget {
+  const MainScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final int currentIndex = ref.watch(tabIndexProvider); 
+  _MainScreenState createState() => _MainScreenState();
+}
+
+class _MainScreenState extends ConsumerState<MainScreen> {
+  bool _didInit = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didInit) {
+      Future.microtask(() {
+        final initialIndex =
+            ModalRoute.of(context)?.settings.arguments as int? ?? 0;
+        ref.read(tabIndexProvider.notifier).state = initialIndex;
+      });
+      _didInit = true;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currentIndex = ref.watch(tabIndexProvider);
     final growthState = ref.watch(bacterialGrowthProvider);
 
     final List<Widget> pages = [
-      DashboardView(),
+      const DashboardView(),
       InsightsView(),
       NotificationsView(),
-      ProfileView(),
+      const ProfileView(),
       SettingsView(),
     ];
 
@@ -33,7 +53,8 @@ class MainScreen extends ConsumerWidget {
       bottomNavigationBar: BottomNavbar(
         currentIndex: currentIndex,
         latestState: growthState.currentState,
-        onTabTapped: (index) => ref.read(tabIndexProvider.notifier).state = index, // ✅ Update tab state
+        onTabTapped: (index) =>
+            ref.read(tabIndexProvider.notifier).state = index,
       ),
     );
   }

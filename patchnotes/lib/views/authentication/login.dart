@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:patchnotes/providers/auth_provider.dart';
+import 'package:patchnotes/states/auth_state.dart';
 
 class LoginPageMobile extends ConsumerStatefulWidget {
   const LoginPageMobile({super.key});
@@ -26,9 +27,24 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
     final authState = ref.watch(authProvider);
     final authNotifier = ref.read(authProvider.notifier);
 
-    ref.listen(authProvider, (previous, next) {
-      if (next.firebaseUser != null) {
-        Navigator.pushReplacementNamed(context, "/home");
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.errorMessage != null &&
+          next.errorMessage!.isNotEmpty &&
+          next.errorMessage != previous?.errorMessage) {
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(next.errorMessage!)),
+          );
+        });
+
+        Future.microtask(() {
+          ref.read(authProvider.notifier).clearError();
+        });
+      }
+
+      if (next.firebaseUser != null && previous?.firebaseUser == null) {
+        Navigator.pushReplacementNamed(context, "/home", arguments: 0);
       }
     });
 
@@ -71,10 +87,12 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
                       SizedBox(height: screenHeight * 0.04),
 
                       // Email Field
-                      _buildTextField(emailController, "Email", false, screenWidth, inputHeight),
+                      _buildTextField(emailController, "Email", false,
+                          screenWidth, inputHeight),
 
                       // Password Field
-                      _buildTextField(passwordController, "Password", true, screenWidth, inputHeight),
+                      _buildTextField(passwordController, "Password", true,
+                          screenWidth, inputHeight),
                       SizedBox(height: screenHeight * 0.03),
 
                       // Login Button
@@ -84,7 +102,8 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF9696D9),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
                           ),
                           onPressed: authState.isLoading
                               ? null
@@ -94,7 +113,6 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
                                       emailController.text.trim(),
                                       passwordController.text.trim(),
                                     );
-
                                   }
                                 },
                           child: authState.isLoading
@@ -112,8 +130,22 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
 
                       // Forgot Password
                       TextButton(
-                        onPressed: () {
-                          // Implement Forgot Password Functionality
+                        onPressed: () async {
+                          final email = emailController.text.trim();
+                          await ref
+                              .read(authProvider.notifier)
+                              .forgotPassword(email);
+                          final state = ref.read(authProvider);
+                          if (state.successMessage != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(state.successMessage!)),
+                            );
+                          } else if (state.errorMessage != null) {
+                            // Show error feedback
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(state.errorMessage!)),
+                            );
+                          }
                         },
                         child: Text(
                           'Forgot Password?',

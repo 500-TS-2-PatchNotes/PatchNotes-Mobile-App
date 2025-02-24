@@ -25,9 +25,11 @@ class SettingsView extends ConsumerWidget {
                 children: [
                   _buildSectionTitle("Account Settings"),
                   _buildSettingsTile("Change Email", Icons.email,
-                      () => _navigateToChangeEmail(context)),
+                      () => _changeEmail(context, authNotifier, ref)),
+                  const SizedBox(height: 5),
                   _buildSettingsTile("Change Password", Icons.lock,
-                      () => _navigateToChangePassword(context)),
+                      () => _changePassword(context, authNotifier)),
+                  const SizedBox(height: 15),
                   _buildSectionTitle("App Preferences"),
                   _buildSwitchTile(
                     "Dark Mode",
@@ -35,20 +37,18 @@ class SettingsView extends ConsumerWidget {
                     settingsState.darkMode,
                     (value) => settingsNotifier.toggleDarkMode(),
                   ),
+                  const SizedBox(height: 5),
                   _buildSwitchTile(
                     "Enable Notifications",
                     Icons.notifications_active,
                     settingsState.notificationsEnabled,
                     (value) => settingsNotifier.toggleNotifications(),
                   ),
-                  _buildSectionTitle("Bluetooth & Device Management"),
-                  _buildSettingsTile("Pair a New Device", Icons.bluetooth,
-                      () => _pairNewDevice(context)),
-                  _buildSettingsTile("Forget/Disconnect Device",
-                      Icons.bluetooth_disabled, () => _forgetDevice(context)),
+                  const SizedBox(height: 15),
                   _buildSectionTitle("Security & Logout"),
                   _buildSettingsTile("Logout", Icons.exit_to_app,
                       () => _confirmLogout(context, ref, authNotifier)),
+                  const SizedBox(height: 5),
                   _buildSettingsTile(
                       "Delete Account",
                       Icons.delete_forever,
@@ -60,6 +60,7 @@ class SettingsView extends ConsumerWidget {
     );
   }
 
+  // Widget Helpers
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -76,7 +77,7 @@ class SettingsView extends ConsumerWidget {
   Widget _buildSettingsTile(String title, IconData icon, VoidCallback onTap) {
     return Card(
       color: Colors.white,
-      elevation: 3,
+      elevation: 5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: Icon(icon, color: const Color(0xFF5B9BD5)),
@@ -107,21 +108,46 @@ class SettingsView extends ConsumerWidget {
     );
   }
 
-  /// **Confirm Logout**
+  /// Confirms Logout
   void _confirmLogout(
       BuildContext context, WidgetRef ref, AuthNotifier authNotifier) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) => AlertDialog(
-        title: const Text("Logout"),
-        content:
-            const Text("Do you want to save your changes before logging out?"),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: const [
+            Icon(Icons.logout, color: Color(0xFF5B9BD5), size: 26),
+            SizedBox(width: 10),
+            Text(
+              "Logout",
+              style: TextStyle(
+                  fontWeight: FontWeight.bold, color: Color(0xFF2D3142)),
+            ),
+          ],
+        ),
+        content: const Text(
+          "Are you sure you want to log out?",
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 16, color: Color(0xFF2D3142)),
+        ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Color(0xFF2D3142),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              textStyle: const TextStyle(fontSize: 16),
+            ),
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text("Cancel"),
           ),
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Color(0xFF5B9BD5), // Blue like other buttons
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              textStyle:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             onPressed: () async {
               Navigator.pop(dialogContext);
               await authNotifier.logout();
@@ -136,14 +162,14 @@ class SettingsView extends ConsumerWidget {
                     context, "/login", (route) => false);
               }
             },
-            child: const Text("Logout", style: TextStyle(color: Colors.red)),
+            child: const Text("Logout"),
           ),
         ],
       ),
     );
   }
 
-  /// **Confirm Delete Account**
+  /// Confirms Delete Account
   void _confirmDeleteAccount(
       BuildContext context, AuthNotifier authNotifier, String email) {
     TextEditingController passwordController = TextEditingController();
@@ -151,29 +177,60 @@ class SettingsView extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) => AlertDialog(
-        title: const Text("Delete Account"),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: const [
+            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+            SizedBox(width: 10),
+            Text("Delete Account",
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-                "This action cannot be undone. Please enter your password to confirm."),
-            const SizedBox(height: 10),
+              "This action cannot be undone. Please enter your password to confirm account deletion.",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 12),
             TextField(
               controller: passwordController,
               obscureText: true,
-              decoration: const InputDecoration(labelText: "Password"),
+              decoration: InputDecoration(
+                labelText: "Password",
+                prefixIcon: const Icon(Icons.lock, color: Colors.red),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Colors.red),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
           ],
         ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.black87,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              textStyle: const TextStyle(fontSize: 16),
+            ),
             onPressed: () {
               passwordController.clear();
               Navigator.pop(dialogContext);
             },
             child: const Text("Cancel"),
           ),
-          TextButton(
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
             onPressed: () async {
               String password = passwordController.text.trim();
               if (password.isEmpty) {
@@ -185,39 +242,237 @@ class SettingsView extends ConsumerWidget {
                 return;
               }
 
-              Navigator.pop(dialogContext);
-              passwordController.clear();
+              try {
+                await authNotifier.reauthenticateAndDelete(email, password);
 
-              await authNotifier.reauthenticateAndDelete(email, password);
+                Navigator.pop(dialogContext);
 
-              Future.delayed(Duration(milliseconds: 500), () {
-                if (context.mounted) {
-                  Navigator.pushNamedAndRemoveUntil(
-                      context, "/login", (route) => false);
-                }
-              });
+                Navigator.pushNamedAndRemoveUntil(
+                    context, "/login", (route) => false);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text("Error: $e"), backgroundColor: Colors.red),
+                );
+              }
             },
-            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+            child: const Text("Delete", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
-  /// **Dummy Navigation Functions (Replace with Actual Navigation)**
-  void _navigateToChangeEmail(BuildContext context) {
-    print("Navigating to Change Email Screen");
+  void _changeEmail(BuildContext context, AuthNotifier authNotifier, WidgetRef ref) {
+    TextEditingController emailController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: const [
+            Icon(Icons.email_outlined, color: Color(0xFF5B9BD5), size: 26),
+            SizedBox(width: 10),
+            Text("Change Email", style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "Enter your new email address below.",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: emailController,
+              decoration: InputDecoration(
+                labelText: "New Email",
+                prefixIcon:
+                    const Icon(Icons.alternate_email, color: Color(0xFF5B9BD5)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Color(0xFF5B9BD5)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              emailController.clear();
+              Navigator.pop(dialogContext);
+            },
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5B9BD5),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              String newEmail = emailController.text.trim();
+              if (newEmail.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text("Please enter a new email."),
+                      backgroundColor: Colors.red),
+                );
+                return;
+              }
+
+              try {
+              await authNotifier.updateEmail(newEmail);
+
+              final uid = authNotifier.state.firebaseUser?.uid;
+              if (uid != null) {
+                await ref.read(userProvider.notifier).updateUserEmail(uid, newEmail);
+              }
+
+              await ref.read(userProvider.notifier).loadUserData();
+
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text("Email updated successfully."),
+                      backgroundColor: Colors.green),
+                );
+                Navigator.pop(dialogContext);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text("Error: $e"), backgroundColor: Colors.red),
+                );
+              }
+            },
+            child: const Text("Update", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
-  void _navigateToChangePassword(BuildContext context) {
-    print("Navigating to Change Password Screen");
-  }
+  void _changePassword(BuildContext context, AuthNotifier authNotifier) {
+    TextEditingController passwordController = TextEditingController();
+    TextEditingController confirmPasswordController = TextEditingController();
 
-  void _pairNewDevice(BuildContext context) {
-    print("Pairing a New Bluetooth Device");
-  }
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: const [
+            Icon(Icons.lock_outline, color: Color(0xFF5B9BD5), size: 26),
+            SizedBox(width: 10),
+            Text("Change Password",
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "Enter your new password below.",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: "New Password",
+                prefixIcon: const Icon(Icons.lock, color: Color(0xFF5B9BD5)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Color(0xFF5B9BD5)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: confirmPasswordController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: "Confirm Password",
+                prefixIcon: const Icon(Icons.lock, color: Color(0xFF5B9BD5)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Color(0xFF5B9BD5)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              passwordController.clear();
+              confirmPasswordController.clear();
+              Navigator.pop(dialogContext);
+            },
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5B9BD5),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              String newPassword = passwordController.text.trim();
+              String confirmPassword = confirmPasswordController.text.trim();
 
-  void _forgetDevice(BuildContext context) {
-    print("Forgetting the Bluetooth Device");
+              if (newPassword.isEmpty || newPassword.length < 6) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text("Password must be at least 6 characters."),
+                      backgroundColor: Colors.red),
+                );
+                return;
+              }
+
+              if (newPassword != confirmPassword) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text("Passwords do not match."),
+                      backgroundColor: Colors.red),
+                );
+                return;
+              }
+
+              try {
+                await authNotifier.updatePassword(newPassword);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text("Password updated successfully."),
+                      backgroundColor: Colors.green),
+                );
+                Navigator.pop(dialogContext);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text("Error: $e"), backgroundColor: Colors.red),
+                );
+              }
+            },
+            child: const Text("Update", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 }

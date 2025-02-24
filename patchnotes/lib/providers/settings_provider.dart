@@ -61,7 +61,9 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   }
 
   void resetSettings() {
-    state = SettingsState();
+    if (!mounted) return;
+    state = SettingsState(); // Fully reset state
+    print("🔄 User data reset");
   }
 
   Future<void> toggleDarkMode() async {

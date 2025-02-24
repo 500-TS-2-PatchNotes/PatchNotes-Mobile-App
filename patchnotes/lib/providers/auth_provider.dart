@@ -20,7 +20,7 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
     ref,
   );
 
-  // If already logged in at startup, trigger user data load.
+  // Check user session on startup
   Future(() async {
     if (authNotifier.state.firebaseUser != null) {
       await ref.read(userProvider.notifier).loadUserData();
@@ -36,101 +36,79 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final Ref _ref;
 
   AuthNotifier(this._authService, this._auth, this._ref) : super(AuthState()) {
-    Future(() async {
-      await _checkUserSession();
-    });
+    _checkUserSession();
   }
 
   Future<void> _checkUserSession() async {
-    final user = _auth.currentUser;
-    if (user != null) {
-      state = state.copyWith(firebaseUser: user);
-      // The userProvider listener will load user data.
-    }
+    state = state.copyWith(firebaseUser: _auth.currentUser);
   }
 
   Future<void> login(String email, String password) async {
-  state = state.copyWith(isLoading: true);
-  try {
-    final user = await _authService.signIn(email, password);
-    if (user != null) {
-      state = state.copyWith(firebaseUser: user);
-      // Explicitly load user data after login.
-      await _ref.read(userProvider.notifier).loadUserData();
-      state = state.copyWith(isLoading: false);
-    } else {
-      state = state.copyWith(isLoading: false);
-    }
-  } catch (e) {
-    state = state.copyWith(errorMessage: "Login failed: $e", isLoading: false);
+    await _handleAuthOperation(() async {
+      final user = await _authService.signIn(email, password);
+      if (user != null) {
+        state = state.copyWith(firebaseUser: user);
+        await _ref.read(userProvider.notifier).loadUserData();
+      }
+    }, "Login failed");
   }
-}
 
-
-  Future<void> register(String email, String password, String fName, String lName) async {
-  state = state.copyWith(isLoading: true);
-  try {
-    final userCredential = await _authService.register(email, password);
-    final user = userCredential.user;
-    if (user != null) {
-      await _ref.read(userProvider.notifier)
-          .initializeNewUser(user.uid, fName, lName, email);
-      state = state.copyWith(firebaseUser: user, isLoading: false);
-    } else {
-      state = state.copyWith(isLoading: false);
-    }
-  } catch (e) {
-    state = state.copyWith(errorMessage: "Registration failed: $e", isLoading: false);
+  Future<void> register(
+      String email, String password, String fName, String lName) async {
+    await _handleAuthOperation(() async {
+      final userCredential = await _authService.register(email, password);
+      final user = userCredential.user;
+      if (user != null) {
+        await _ref
+            .read(userProvider.notifier)
+            .initializeNewUser(user.uid, fName, lName, email);
+        state = state.copyWith(firebaseUser: user);
+      }
+    }, "Registration failed");
   }
-}
-
 
   Future<void> logout() async {
-    print("Logging out...");
     await _authService.signOut();
-
-    // Reset user data
     _ref.read(userProvider.notifier).resetUserData();
-
-    // Reset auth state
     state = AuthState();
 
-    // Navigate to login screen after reset
+    // Navigate to login screen
     Future.microtask(() {
-      final navigatorKey = _ref.read(navigatorKeyProvider);
-      navigatorKey.currentState
+      _ref
+          .read(navigatorKeyProvider)
+          .currentState
           ?.pushNamedAndRemoveUntil("/login", (route) => false);
     });
+  }
 
-    print("Logout completed, navigating to login");
+  Future<void> reauthenticateUser(String password) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+          code: 'user-not-found', message: 'No user found.');
+    }
+
+    AuthCredential credential =
+        EmailAuthProvider.credential(email: user.email!, password: password);
+    await user.reauthenticateWithCredential(credential);
   }
 
   Future<void> reauthenticateAndDelete(String email, String password) async {
-    state = state.copyWith(isLoading: true);
-    try {
+    await _handleAuthOperation(() async {
       final user = _auth.currentUser;
       if (user == null) {
-        state = state.copyWith(
-            errorMessage: "No user is currently logged in", isLoading: false);
-        return;
+        throw FirebaseAuthException(
+            code: 'user-not-found', message: 'No user found.');
       }
 
-      // Reauthenticate the user before deleting the account.
       await _authService.reauthenticateAndDelete(email, password);
-
-      // Delete user data from Firestore.
       await _deleteUserData(user.uid);
 
-      // Reset auth and user states.
       _ref.read(userProvider.notifier).resetUserData();
       state = AuthState();
-    } catch (e) {
-      state = state.copyWith(
-          errorMessage: "Account deletion failed: $e", isLoading: false);
-    }
+    }, "Account deletion failed");
   }
 
-  /// Delete user-related data from Firestore.
   Future<void> _deleteUserData(String uid) async {
     try {
       final firestore = _ref.read(firestoreServiceProvider);
@@ -139,13 +117,56 @@ class AuthNotifier extends StateNotifier<AuthState> {
         firestore.accountCollection.doc(uid).delete(),
         firestore.woundCollection.doc(uid).delete(),
       ]);
-      print("User data deleted from Firestore");
-
-      // Only reset the user provider's state.
-      _ref.read(userProvider.notifier).resetUserData();
-      // Removed _ref.invalidate calls to avoid circular dependency.
     } catch (e) {
-      print("⚠️ Error deleting user data: $e");
+      print("Error deleting user data: $e");
     }
+  }
+
+  Future<void> forgotPassword(String email) async {
+    await _handleAuthOperation(() async {
+      await _auth.sendPasswordResetEmail(email: email);
+      state =
+          state.copyWith(successMessage: "Password reset email sent to $email");
+    }, "Failed to send password reset email");
+  }
+
+  Future<void> updateEmail(String newEmail) async {
+  await _handleAuthOperation(() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await user.verifyBeforeUpdateEmail(newEmail);
+
+      await _ref.read(userProvider.notifier).updateUserEmail(user.uid, newEmail);
+
+      await _ref.read(userProvider.notifier).loadUserData();
+    }
+  }, "Failed to update email");
+}
+
+
+
+  Future<void> updatePassword(String newPassword) async {
+    await _handleAuthOperation(() async {
+      final user = _auth.currentUser;
+      if (user != null) {
+        await user.updatePassword(newPassword);
+      }
+    }, "Failed to update password");
+  }
+
+  Future<void> _handleAuthOperation(
+      Future<void> Function() operation, String errorMessage) async {
+    state = state.copyWith(isLoading: true);
+    try {
+      await operation();
+    } catch (e) {
+      state = state.copyWith(errorMessage: "$errorMessage: $e");
+    } finally {
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
+  void clearError() {
+    state = state.copyWith(errorMessage: "", isLoading: false);
   }
 }

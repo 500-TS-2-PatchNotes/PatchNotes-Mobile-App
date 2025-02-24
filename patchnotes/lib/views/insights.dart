@@ -5,31 +5,34 @@ import '../widgets/top_navbar.dart';
 import '../utils/testImage.dart';
 
 class InsightsView extends ConsumerWidget {
+  const InsightsView({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final growthState = ref.watch(bacterialGrowthProvider);
 
     return Scaffold(
       appBar: const Header(title: "Insights"),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildStatusContainer(growthState.currentState),
-            const SizedBox(height: 10),
-
-            _buildSectionTitle('Most Recent Wound Images'),
-            const SizedBox(height: 16),
-            _buildImageGrid(),
-            const SizedBox(height: 24),
-
-            _buildTipContainer(growthState.currentState),
-            const SizedBox(height: 24),
-
-            _buildLastSyncedInfo(),
-            const SizedBox(height: 24),
-          ],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildStatusContainer(growthState.currentState),
+                const SizedBox(height: 20),
+                _buildSectionTitle('Most Recent Wound Images'),
+                const SizedBox(height: 20),
+                _buildImageGrid(),
+                const SizedBox(height: 24),
+                _buildTipContainer(growthState.currentState),
+                const SizedBox(height: 24),
+                _buildLastSyncedInfo(),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -129,12 +132,12 @@ class InsightsView extends ConsumerWidget {
         return 'Status: Your wound is healing well. Good Job!';
       case 'Observation':
         return 'Status: Your wound needs monitoring. Keep an eye on it!';
-      case 'Early Infection':
+      case 'Early':
         return 'Status: Your wound shows signs of infection. Take action!';
-      case 'Severe Infection':
+      case 'Severe':
         return 'Status: Your wound is severely infected. Seek medical advice!';
       case 'Critical':
-        return 'Status: Your wound is critical. Visit a healthcare provider immediately!';
+        return 'Status: Your wound is critical. Visit a healthcare provider ASAP!';
       default:
         return 'Status: Unknown wound status.';
     }
@@ -146,9 +149,9 @@ class InsightsView extends ConsumerWidget {
         return 'Tip: Keep the wound clean and moisturized.';
       case 'Observation':
         return 'Tip: Ensure the wound is properly dressed.';
-      case 'Early Infection':
+      case 'Early':
         return 'Tip: Clean the wound with an antiseptic and monitor it closely.';
-      case 'Severe Infection':
+      case 'Severe':
         return 'Tip: Consult a healthcare professional for immediate attention.';
       case 'Critical':
         return 'Tip: Seek emergency medical care immediately!';
