@@ -20,22 +20,25 @@ class NotificationsView extends ConsumerWidget {
                 return Dismissible(
                   key: Key(item.id),
                   background: Container(
-                    color: Colors.green,
+                    color: Theme.of(context).colorScheme.primary,
                     alignment: Alignment.centerLeft,
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: const Icon(Icons.check, color: Colors.white),
                   ),
                   secondaryBackground: Container(
-                    color: Colors.redAccent,
+                    color: Theme.of(context).colorScheme.error,
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: const Icon(Icons.delete, color: Colors.white),
                   ),
                   confirmDismiss: (direction) async {
                     if (direction == DismissDirection.startToEnd) {
-                      ref.read(userProvider.notifier).markNotificationAsSeen(index);
+                      ref
+                          .read(userProvider.notifier)
+                          .markNotificationAsSeen(index);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('"${item.title}" marked as seen')),
+                        SnackBar(
+                            content: Text('"${item.title}" marked as seen')),
                       );
                       return false; // Prevent dismissal
                     } else if (direction == DismissDirection.endToStart) {
@@ -52,16 +55,29 @@ class NotificationsView extends ConsumerWidget {
                     }
                   },
                   child: Card(
-                    color: item.seen ? Colors.grey.shade300 : Colors.white,
+                    color: item.seen
+                        ? Theme.of(context)
+                            .colorScheme
+                            .surfaceVariant
+                            .withOpacity(0.5)
+                        : Theme.of(context).colorScheme.surface,
                     child: ListTile(
                       title: Text(item.title),
                       subtitle: Text(item.message),
                       trailing: TextButton(
-                        child: const Text('Mark as Seen'),
+                        child: Text(
+                          'Mark as Seen',
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary),
+                        ),
                         onPressed: () {
-                          ref.read(userProvider.notifier).markNotificationAsSeen(index);
+                          ref
+                              .read(userProvider.notifier)
+                              .markNotificationAsSeen(index);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('"${item.title}" marked as seen')),
+                            SnackBar(
+                                content:
+                                    Text('"${item.title}" marked as seen')),
                           );
                         },
                       ),

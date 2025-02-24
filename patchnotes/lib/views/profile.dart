@@ -123,11 +123,15 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
             const SizedBox(height: 5),
             Text(
               "${appUser?.fName ?? "John"} ${appUser?.lName ?? "Doe"}",
-              style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : Colors.black,
+              ),
             ),
+
             Text(
               appUser?.email ?? "johndoe@gmail.com",
               style: const TextStyle(fontSize: 16, color: Colors.grey),
@@ -158,7 +162,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                 "Current State: ${growthState.currentState}", Icons.healing),
             const SizedBox(height: 5),
 
-            // Medical Notes Section
+            // Medical Notes Section**
             _buildEditableCard(
                 title: "Medical Notes",
                 icon: Icons.notes,
@@ -181,59 +185,68 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
   }
 
   /// Editable Field Card
-  Widget _buildEditableCard(
-      {required String title,
-      required IconData icon,
-      required TextEditingController controller,
-      required String value,
-      required bool isEditing,
-      required VoidCallback onToggleEditing,
-      required VoidCallback onSave,
-      String defaultText = "No information available"}) {
+  Widget _buildEditableCard({
+    required String title,
+    required IconData icon,
+    required TextEditingController controller,
+    required String value,
+    required bool isEditing,
+    required VoidCallback onToggleEditing,
+    required VoidCallback onSave,
+    String defaultText = "No information available",
+  }) {
+    final theme = Theme.of(context);
+
     return Card(
-      color: Colors.white,
+      color: theme.cardColor,
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        leading: Icon(icon, color: const Color(0xFF5B9BD5)),
+        leading: Icon(icon, color: theme.iconTheme.color),
         title: Text(
           title,
-          style:
-              const TextStyle(fontWeight: FontWeight.w400, color: Colors.black),
+          style: TextStyle(
+              fontWeight: FontWeight.w400,
+              color: theme.textTheme.bodyLarge!.color),
         ),
         subtitle: isEditing
             ? TextField(
                 controller: controller,
                 maxLines: 2,
+                style: TextStyle(color: theme.textTheme.bodyLarge!.color),
                 decoration: InputDecoration(
                   hintText: "Enter $title...",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Color(0xFF5B9BD5)),
+                    borderSide: BorderSide(color: theme.primaryColor),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 4,
-                    horizontal: 8,
-                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                 ),
               )
             : Text(
                 value.isNotEmpty ? value : defaultText,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: theme.textTheme.bodyLarge!.color,
                 ),
               ),
         trailing: IconButton(
-          icon: Icon(isEditing ? Icons.save : Icons.edit,
-              color: isEditing ? Colors.green : Colors.blue),
+          icon: Icon(
+            isEditing ? Icons.save : Icons.edit,
+            color: isEditing
+                ? Colors.green
+                : (Theme.of(context).brightness == Brightness.dark
+                    ? theme.iconTheme.color
+                    : theme.primaryColor),
+          ),
           onPressed: () {
             if (isEditing) {
               onSave();
@@ -247,20 +260,23 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
 
   /// Info Display Card
   Widget _buildInfoCard(String title, String value, IconData icon) {
+    final theme = Theme.of(context);
+
     return Card(
-      color: Colors.white,
+      color: theme.cardColor,
       elevation: 5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        leading: Icon(icon, color: const Color(0xFF5B9BD5)),
+        leading: Icon(icon, color: theme.iconTheme.color),
         title: Text(title,
-            style: const TextStyle(
-                fontWeight: FontWeight.w400, color: Colors.black)),
+            style: TextStyle(
+                fontWeight: FontWeight.w400,
+                color: theme.textTheme.bodyLarge!.color)),
         subtitle: Text(value,
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.black)),
+                color: theme.textTheme.bodyLarge!.color)),
       ),
     );
   }

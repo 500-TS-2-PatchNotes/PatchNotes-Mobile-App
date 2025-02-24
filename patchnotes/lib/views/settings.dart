@@ -12,7 +12,7 @@ class SettingsView extends ConsumerWidget {
     final settingsNotifier = ref.read(settingsProvider.notifier);
     final authState = ref.watch(authProvider);
     final authNotifier = ref.read(authProvider.notifier);
-
+    final theme = Theme.of(context);
     final user = authState.firebaseUser;
 
     return Scaffold(
@@ -23,19 +23,20 @@ class SettingsView extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: ListView(
                 children: [
-                  _buildSectionTitle("Account Settings"),
-                  _buildSettingsTile("Change Email", Icons.email,
-                      () => _changeEmail(context, authNotifier, ref)),
+                  _buildSectionTitle("Account Settings", theme),
+                  _buildSettingsTile(
+                      "Change Email", Icons.email, () => _changeEmail(context, authNotifier, ref), theme),
                   const SizedBox(height: 5),
-                  _buildSettingsTile("Change Password", Icons.lock,
-                      () => _changePassword(context, authNotifier)),
+                  _buildSettingsTile(
+                      "Change Password", Icons.lock, () => _changePassword(context, authNotifier), theme),
                   const SizedBox(height: 15),
-                  _buildSectionTitle("App Preferences"),
+                  _buildSectionTitle("App Preferences", theme),
                   _buildSwitchTile(
                     "Dark Mode",
                     Icons.brightness_6,
                     settingsState.darkMode,
                     (value) => settingsNotifier.toggleDarkMode(),
+                    theme,
                   ),
                   const SizedBox(height: 5),
                   _buildSwitchTile(
@@ -43,65 +44,64 @@ class SettingsView extends ConsumerWidget {
                     Icons.notifications_active,
                     settingsState.notificationsEnabled,
                     (value) => settingsNotifier.toggleNotifications(),
+                    theme,
                   ),
                   const SizedBox(height: 15),
-                  _buildSectionTitle("Security & Logout"),
-                  _buildSettingsTile("Logout", Icons.exit_to_app,
-                      () => _confirmLogout(context, ref, authNotifier)),
+                  _buildSectionTitle("Security & Logout", theme),
+                  _buildSettingsTile(
+                      "Logout", Icons.exit_to_app, () => _confirmLogout(context, ref, authNotifier), theme),
                   const SizedBox(height: 5),
                   _buildSettingsTile(
                       "Delete Account",
                       Icons.delete_forever,
-                      () => _confirmDeleteAccount(
-                          context, authNotifier, user?.email ?? "")),
+                      () => _confirmDeleteAccount(context, authNotifier, user?.email ?? ""),
+                      theme),
                 ],
               ),
             ),
     );
   }
 
-  // Widget Helpers
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF967BB6)),
+            color: theme.textTheme.bodyLarge!.color),
       ),
     );
   }
 
-  Widget _buildSettingsTile(String title, IconData icon, VoidCallback onTap) {
+  Widget _buildSettingsTile(String title, IconData icon, VoidCallback onTap, ThemeData theme) {
     return Card(
-      color: Colors.white,
+      color: theme.cardColor,
       elevation: 5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        leading: Icon(icon, color: const Color(0xFF5B9BD5)),
+        leading: Icon(icon, color: theme.iconTheme.color),
         title: Text(title,
-            style: const TextStyle(fontSize: 14, color: Color(0xFF2D3142))),
-        trailing: const Icon(Icons.arrow_forward_ios,
-            size: 14, color: Color(0xFF967BB6)),
+            style: TextStyle(fontSize: 14, color: theme.textTheme.bodyLarge!.color)),
+        trailing: Icon(Icons.arrow_forward_ios, size: 14, color: theme.iconTheme.color),
         onTap: onTap,
       ),
     );
   }
 
   Widget _buildSwitchTile(
-      String title, IconData icon, bool value, ValueChanged<bool> onChanged) {
+      String title, IconData icon, bool value, ValueChanged<bool> onChanged, ThemeData theme) {
     return Card(
-      color: Colors.white,
+      color: theme.cardColor,
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: SwitchListTile(
-        activeColor: const Color(0xFF4A90E2),
+        activeColor: theme.primaryColor,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-        secondary: Icon(icon, color: const Color(0xFF967BB6)),
+        secondary: Icon(icon, color: theme.iconTheme.color),
         title: Text(title,
-            style: const TextStyle(fontSize: 14, color: Color(0xFF2D3142))),
+            style: TextStyle(fontSize: 14, color: theme.textTheme.bodyLarge!.color)),
         value: value,
         onChanged: onChanged,
       ),
@@ -110,64 +110,71 @@ class SettingsView extends ConsumerWidget {
 
   /// Confirms Logout
   void _confirmLogout(
-      BuildContext context, WidgetRef ref, AuthNotifier authNotifier) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: const [
-            Icon(Icons.logout, color: Color(0xFF5B9BD5), size: 26),
-            SizedBox(width: 10),
-            Text(
-              "Logout",
-              style: TextStyle(
-                  fontWeight: FontWeight.bold, color: Color(0xFF2D3142)),
-            ),
-          ],
-        ),
-        content: const Text(
-          "Are you sure you want to log out?",
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, color: Color(0xFF2D3142)),
-        ),
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(
-              foregroundColor: Color(0xFF2D3142),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              textStyle: const TextStyle(fontSize: 16),
-            ),
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              foregroundColor: Color(0xFF5B9BD5), // Blue like other buttons
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              textStyle:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            onPressed: () async {
-              Navigator.pop(dialogContext);
-              await authNotifier.logout();
+    BuildContext context, WidgetRef ref, AuthNotifier authNotifier) {
+  final theme = Theme.of(context);
+  final isDarkMode = theme.brightness == Brightness.dark;
 
-              // Reset settings and user data before switching pages
-              ref.invalidate(settingsProvider);
-              ref.invalidate(userProvider);
-
-              // Ensure full switch to login
-              if (context.mounted) {
-                Navigator.pushNamedAndRemoveUntil(
-                    context, "/login", (route) => false);
-              }
-            },
-            child: const Text("Logout"),
+  showDialog(
+    context: context,
+    builder: (BuildContext dialogContext) => AlertDialog(
+      backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          Icon(Icons.logout, color: theme.iconTheme.color, size: 26),
+          const SizedBox(width: 10),
+          Text(
+            "Logout",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isDarkMode ? Colors.white : const Color(0xFF2D3142),
+            ),
           ),
         ],
       ),
-    );
-  }
+      content: Text(
+        "Are you sure you want to log out?",
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 16,
+          color: isDarkMode ? Colors.white70 : const Color(0xFF2D3142),
+        ),
+      ),
+      actions: [
+        TextButton(
+          style: TextButton.styleFrom(
+            foregroundColor: isDarkMode ? Colors.white70 : const Color(0xFF2D3142),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            textStyle: const TextStyle(fontSize: 16),
+          ),
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text("Cancel"),
+        ),
+        TextButton(
+          style: TextButton.styleFrom(
+            foregroundColor: theme.primaryColor,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          onPressed: () async {
+            Navigator.pop(dialogContext);
+            await authNotifier.logout();
+
+            // Reset settings and user data before switching pages
+            ref.invalidate(settingsProvider);
+            ref.invalidate(userProvider);
+
+            // Ensure full switch to login
+            if (context.mounted) {
+              Navigator.pushNamedAndRemoveUntil(context, "/login", (route) => false);
+            }
+          },
+          child: const Text("Logout"),
+        ),
+      ],
+    ),
+  );
+}
 
   /// Confirms Delete Account
   void _confirmDeleteAccount(

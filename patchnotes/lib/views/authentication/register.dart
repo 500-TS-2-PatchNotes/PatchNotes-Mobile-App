@@ -125,10 +125,10 @@ class _RegisterPageMobileState extends ConsumerState<RegisterPageMobile> {
                   ),
                 ),
 
-                // Goes directly into the MainScreen Page
+                // Goes directly to the Login Page
                 TextButton(
                   onPressed: () {
-                    Navigator.pushReplacementNamed(context, "/home", arguments: 0);
+                    Navigator.pushReplacementNamed(context, "/login");
                   },
                   child: Text(
                     'Already have an account? Login',

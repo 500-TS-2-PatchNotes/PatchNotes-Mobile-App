@@ -21,24 +21,24 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   Widget build(BuildContext context) {
     final growthState = ref.watch(bacterialGrowthProvider);
     final tabIndexNotifier = ref.read(tabIndexProvider.notifier);
-    
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: const Header(title: "Dashboard"),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildStateIndicator(growthState),
+          _buildStateIndicator(growthState, theme),
           const SizedBox(height: 10),
-          _buildChart(growthState),
+          _buildChart(growthState, theme),
           const SizedBox(height: 20),
-          const SizedBox(height: 10),
-          _buildActionButtons(context, tabIndexNotifier),
+          _buildActionButtons(context, tabIndexNotifier, theme),
         ],
       ),
     );
   }
 
-  Widget _buildStateIndicator(BacterialGrowthState growthState) {
+  Widget _buildStateIndicator(BacterialGrowthState growthState, ThemeData theme) {
     String state = growthState.currentState;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -52,13 +52,13 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
         style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
-          color: state == 'Observation' ? Colors.black : Colors.white,
+          color: state == 'Observation' ? theme.textTheme.bodyLarge?.color : Colors.white,
         ),
       ),
     );
   }
 
-  Widget _buildChart(BacterialGrowthState growthState) {
+  Widget _buildChart(BacterialGrowthState growthState, ThemeData theme) {
     List<FlSpot> chartData = growthState.dataPoints
         .map((point) => FlSpot(point.time, point.growthRate))
         .toList();
@@ -67,28 +67,48 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       height: 250,
       child: LineChart(
         LineChartData(
-          gridData: const FlGridData(show: true),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: true,
+            drawHorizontalLine: true,
+            getDrawingVerticalLine: (value) => FlLine(
+              color: theme.colorScheme.onBackground.withOpacity(0.2),
+              strokeWidth: 1,
+            ),
+            getDrawingHorizontalLine: (value) => FlLine(
+              color: theme.colorScheme.onBackground.withOpacity(0.2),
+              strokeWidth: 1,
+            ),
+          ),
           titlesData: FlTitlesData(
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 interval: 10,
-                getTitlesWidget: (value, _) => Text('${value.toInt()} CFU',
-                    style: const TextStyle(fontSize: 12)),
+                getTitlesWidget: (value, _) => Text(
+                  '${value.toInt()} CFU',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.textTheme.bodySmall?.color,
+                  ),
+                ),
               ),
             ),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 interval: 5,
-                getTitlesWidget: (value, _) => Text('${value.toInt()}s',
-                    style: const TextStyle(fontSize: 12)),
+                getTitlesWidget: (value, _) => Text(
+                  '${value.toInt()}s',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.textTheme.bodySmall?.color,
+                  ),
+                ),
               ),
             ),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
           minX: chartData.isNotEmpty ? chartData.first.x : 0,
           maxX: chartData.isNotEmpty ? chartData.last.x + 30 : 30,
@@ -98,8 +118,8 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
             LineChartBarData(
               spots: chartData,
               isCurved: true,
-              gradient: const LinearGradient(
-                colors: [Colors.blue, Colors.green],
+              gradient: LinearGradient(
+                colors: [theme.primaryColor, theme.colorScheme.secondary],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -114,7 +134,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   }
 
   Widget _buildActionButtons(
-      BuildContext context, StateController<int> tabIndexNotifier) {
+      BuildContext context, StateController<int> tabIndexNotifier, ThemeData theme) {
     return Consumer(
       builder: (context, ref, child) {
         final bluetoothState = ref.watch(bluetoothProvider);
@@ -127,11 +147,10 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
           children: [
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5B9BD5),
+                backgroundColor: theme.primaryColor,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
                 elevation: 5,
               ),
               onPressed: () {
@@ -139,19 +158,14 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
               },
               icon: const Icon(Icons.history, color: Colors.white),
               label: const Text('Patient History',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold)),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    isConnected ? Colors.red : const Color(0xFF5B9BD5),
+                backgroundColor: isConnected ? Colors.red : theme.primaryColor,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
                 elevation: 5,
               ),
               onPressed: () async {
@@ -162,13 +176,11 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                       builder: (context) => ScannerPage(
                         onDeviceSelected: (device) async {
                           if (device != null) {
-                            bool success =
-                                await bluetoothNotifier.connectToDevice(device);
+                            bool success = await bluetoothNotifier.connectToDevice(device);
                             if (success) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text(
-                                      "Device connected successfully!",
+                                  content: Text("Device connected successfully!",
                                       textAlign: TextAlign.center),
                                   backgroundColor: Colors.green,
                                   duration: Duration(seconds: 2),
@@ -212,10 +224,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
               ),
               label: Text(
                 isConnected ? "Disconnect Device" : "Sync Device",
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -225,19 +234,13 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   }
 
   Color _getStateBackgroundColor(String state) {
-    switch (state) {
-      case 'Healthy':
-        return Colors.cyan.withOpacity(0.5);
-      case 'Observation':
-        return Colors.amber.withOpacity(0.5);
-      case 'Early':
-        return Colors.orange.withOpacity(0.5);
-      case 'Severe':
-        return Colors.red.withOpacity(0.5);
-      case 'Critical':
-        return Colors.purple.withOpacity(0.5);
-      default:
-        return Colors.grey.withOpacity(0.5);
-    }
+    return switch (state) {
+      'Healthy' => Colors.cyan.withOpacity(0.5),
+      'Observation' => Colors.amber.withOpacity(0.5),
+      'Early' => Colors.orange.withOpacity(0.5),
+      'Severe' => Colors.red.withOpacity(0.5),
+      'Critical' => Colors.purple.withOpacity(0.5),
+      _ => Colors.grey.withOpacity(0.5),
+    };
   }
 }

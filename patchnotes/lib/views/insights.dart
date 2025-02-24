@@ -10,6 +10,7 @@ class InsightsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final growthState = ref.watch(bacterialGrowthProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: const Header(title: "Insights"),
@@ -20,15 +21,15 @@ class InsightsView extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildStatusContainer(growthState.currentState),
+                _buildStatusContainer(growthState.currentState, theme),
                 const SizedBox(height: 20),
-                _buildSectionTitle('Most Recent Wound Images'),
+                _buildSectionTitle('Most Recent Wound Images', theme),
                 const SizedBox(height: 20),
-                _buildImageGrid(),
+                _buildImageGrid(theme),
                 const SizedBox(height: 24),
-                _buildTipContainer(growthState.currentState),
+                _buildTipContainer(growthState.currentState, theme),
                 const SizedBox(height: 24),
-                _buildLastSyncedInfo(),
+                _buildLastSyncedInfo(theme),
                 const SizedBox(height: 24),
               ],
             ),
@@ -38,37 +39,35 @@ class InsightsView extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusContainer(String state) {
+  Widget _buildStatusContainer(String state, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE6E6FA),
+        color: _getStateBackgroundColor(state, theme),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         _getStatusMessage(state),
-        style: const TextStyle(
-          fontSize: 18,
+        style: theme.textTheme.titleMedium?.copyWith(
           fontWeight: FontWeight.bold,
-          color: Colors.black,
         ),
         textAlign: TextAlign.center,
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         textAlign: TextAlign.center,
       ),
     );
   }
 
-  Widget _buildImageGrid() {
+  Widget _buildImageGrid(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: GridView.builder(
@@ -84,7 +83,7 @@ class InsightsView extends ConsumerWidget {
         itemBuilder: (context, index) {
           return Container(
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade400),
+              border: Border.all(color: theme.dividerColor),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const RandomWoundImageWidget(),
@@ -94,33 +93,30 @@ class InsightsView extends ConsumerWidget {
     );
   }
 
-  Widget _buildTipContainer(String state) {
+  Widget _buildTipContainer(String state, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.1),
+          color: theme.colorScheme.primary.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           _getTip(state),
-          style: const TextStyle(
-            fontSize: 16,
-            fontStyle: FontStyle.italic,
-          ),
+          style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
           textAlign: TextAlign.center,
         ),
       ),
     );
   }
 
-  Widget _buildLastSyncedInfo() {
+  Widget _buildLastSyncedInfo(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Text(
         'Last synced: ${_formatDateTime(DateTime.now())}',
-        style: const TextStyle(fontSize: 14, color: Colors.grey),
+        style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
         textAlign: TextAlign.center,
       ),
     );
@@ -129,7 +125,7 @@ class InsightsView extends ConsumerWidget {
   String _getStatusMessage(String state) {
     switch (state) {
       case 'Healthy':
-        return 'Status: Your wound is healing well. Good Job!';
+        return 'Status: Your wound is healing well. Good job!';
       case 'Observation':
         return 'Status: Your wound needs monitoring. Keep an eye on it!';
       case 'Early':
@@ -177,5 +173,22 @@ class InsightsView extends ConsumerWidget {
     final minute = dateTime.minute.toString().padLeft(2, '0');
     final period = dateTime.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';
+  }
+
+  Color _getStateBackgroundColor(String state, ThemeData theme) {
+    switch (state) {
+      case 'Healthy':
+        return Colors.cyan.withOpacity(0.2);
+      case 'Observation':
+        return Colors.amber.withOpacity(0.2);
+      case 'Early':
+        return Colors.orange.withOpacity(0.2);
+      case 'Severe':
+        return Colors.red.withOpacity(0.2);
+      case 'Critical':
+        return Colors.purple.withOpacity(0.2);
+      default:
+        return theme.colorScheme.surface.withOpacity(0.2);
+    }
   }
 }
