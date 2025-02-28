@@ -31,7 +31,6 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
       if (next.errorMessage != null &&
           next.errorMessage!.isNotEmpty &&
           next.errorMessage != previous?.errorMessage) {
-
         WidgetsBinding.instance.addPostFrameCallback((_) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(next.errorMessage!)),
@@ -46,6 +45,10 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
       if (next.firebaseUser != null && previous?.firebaseUser == null) {
         Navigator.pushReplacementNamed(context, "/home", arguments: 0);
       }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authProvider.notifier).clearError();
     });
 
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -136,6 +139,7 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
                               .read(authProvider.notifier)
                               .forgotPassword(email);
                           final state = ref.read(authProvider);
+
                           if (state.successMessage != null) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text(state.successMessage!)),

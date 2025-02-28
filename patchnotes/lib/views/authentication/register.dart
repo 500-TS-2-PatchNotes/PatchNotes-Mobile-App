@@ -29,42 +29,42 @@ class _RegisterPageMobileState extends ConsumerState<RegisterPageMobile> {
   }
 
   Future<void> _registerUser() async {
-  final authNotifier = ref.read(authProvider.notifier);
-  
-  if (_formKey.currentState!.validate()) {
-    setState(() => _isSubmitting = true);
+    final authNotifier = ref.read(authProvider.notifier);
 
-    await authNotifier.register(
-      emailController.text.trim(),
-      passwordController.text.trim(),
-      firstNameController.text.trim(),
-      lastNameController.text.trim(),
-    );
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isSubmitting = true);
 
-    final authState = ref.read(authProvider);
+      await authNotifier.register(
+        emailController.text.trim(),
+        passwordController.text.trim(),
+        firstNameController.text.trim(),
+        lastNameController.text.trim(),
+      );
 
-    if (authState.firebaseUser != null) {
-      _showToast("Registration successful! Redirecting to login...", Colors.green);
+      final authState = ref.read(authProvider);
 
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, "/login");
-        }
-      });
-    } else {
-      _showToast(authState.errorMessage ?? "Registration failed", Colors.red);
-    }
+      if (authState.firebaseUser != null) {
+        _showToast("Registration successful! Redirecting to dashboard...",
+            Colors.green);
 
-    if (mounted) {
-      setState(() => _isSubmitting = false);
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, "/home", arguments: 0);
+          }
+        });
+      } else {
+        _showToast(authState.errorMessage ?? "Registration failed", Colors.red);
+      }
+
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider); 
+    final authState = ref.watch(authProvider);
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
     final double textSize = screenWidth * 0.05;
@@ -92,13 +92,17 @@ class _RegisterPageMobileState extends ConsumerState<RegisterPageMobile> {
                 SizedBox(height: screenHeight * 0.04),
 
                 // First Name
-                _buildTextField(firstNameController, "First Name", false, screenWidth, inputHeight),
+                _buildTextField(firstNameController, "First Name", false,
+                    screenWidth, inputHeight),
                 // Last Name
-                _buildTextField(lastNameController, "Last Name", false, screenWidth, inputHeight),
+                _buildTextField(lastNameController, "Last Name", false,
+                    screenWidth, inputHeight),
                 // Email
-                _buildTextField(emailController, "Email (Username)", false, screenWidth, inputHeight),
+                _buildTextField(emailController, "Email (Username)", false,
+                    screenWidth, inputHeight),
                 // Password
-                _buildTextField(passwordController, "Password", true, screenWidth, inputHeight),
+                _buildTextField(passwordController, "Password", true,
+                    screenWidth, inputHeight),
                 SizedBox(height: screenHeight * 0.02),
 
                 // Register Button
@@ -112,7 +116,9 @@ class _RegisterPageMobileState extends ConsumerState<RegisterPageMobile> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    onPressed: _isSubmitting || authState.isLoading ? null : _registerUser,
+                    onPressed: _isSubmitting || authState.isLoading
+                        ? null
+                        : _registerUser,
                     child: _isSubmitting || authState.isLoading
                         ? CircularProgressIndicator(color: Colors.white)
                         : Text(

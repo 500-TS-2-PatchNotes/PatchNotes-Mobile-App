@@ -223,7 +223,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                 color: Colors.white,
               ),
               label: Text(
-                isConnected ? "Disconnect Device" : "Sync Device",
+                isConnected ? "Disconnect" : "Sync Device",
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),

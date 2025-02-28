@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:patchnotes/providers/bg_provider.dart';
 import 'package:patchnotes/providers/settings_provider.dart';
 import 'package:patchnotes/providers/auth_provider.dart';
 import 'package:patchnotes/providers/user_provider.dart';
@@ -24,11 +25,11 @@ class SettingsView extends ConsumerWidget {
               child: ListView(
                 children: [
                   _buildSectionTitle("Account Settings", theme),
-                  _buildSettingsTile(
-                      "Change Email", Icons.email, () => _changeEmail(context, authNotifier, ref), theme),
+                  _buildSettingsTile("Change Email", Icons.email,
+                      () => _changeEmail(context, authNotifier, ref), theme),
                   const SizedBox(height: 5),
-                  _buildSettingsTile(
-                      "Change Password", Icons.lock, () => _changePassword(context, authNotifier), theme),
+                  _buildSettingsTile("Change Password", Icons.lock,
+                      () => _changePassword(context, authNotifier), theme),
                   const SizedBox(height: 15),
                   _buildSectionTitle("App Preferences", theme),
                   _buildSwitchTile(
@@ -48,13 +49,14 @@ class SettingsView extends ConsumerWidget {
                   ),
                   const SizedBox(height: 15),
                   _buildSectionTitle("Security & Logout", theme),
-                  _buildSettingsTile(
-                      "Logout", Icons.exit_to_app, () => _confirmLogout(context, ref, authNotifier), theme),
+                  _buildSettingsTile("Logout", Icons.exit_to_app,
+                      () => _confirmLogout(context, ref, authNotifier), theme),
                   const SizedBox(height: 5),
                   _buildSettingsTile(
                       "Delete Account",
                       Icons.delete_forever,
-                      () => _confirmDeleteAccount(context, authNotifier, user?.email ?? ""),
+                      () => _confirmDeleteAccount(
+                          context, ref, authNotifier, user?.email ?? ""),
                       theme),
                 ],
               ),
@@ -75,7 +77,8 @@ class SettingsView extends ConsumerWidget {
     );
   }
 
-  Widget _buildSettingsTile(String title, IconData icon, VoidCallback onTap, ThemeData theme) {
+  Widget _buildSettingsTile(
+      String title, IconData icon, VoidCallback onTap, ThemeData theme) {
     return Card(
       color: theme.cardColor,
       elevation: 5,
@@ -83,15 +86,17 @@ class SettingsView extends ConsumerWidget {
       child: ListTile(
         leading: Icon(icon, color: theme.iconTheme.color),
         title: Text(title,
-            style: TextStyle(fontSize: 14, color: theme.textTheme.bodyLarge!.color)),
-        trailing: Icon(Icons.arrow_forward_ios, size: 14, color: theme.iconTheme.color),
+            style: TextStyle(
+                fontSize: 14, color: theme.textTheme.bodyLarge!.color)),
+        trailing: Icon(Icons.arrow_forward_ios,
+            size: 14, color: theme.iconTheme.color),
         onTap: onTap,
       ),
     );
   }
 
-  Widget _buildSwitchTile(
-      String title, IconData icon, bool value, ValueChanged<bool> onChanged, ThemeData theme) {
+  Widget _buildSwitchTile(String title, IconData icon, bool value,
+      ValueChanged<bool> onChanged, ThemeData theme) {
     return Card(
       color: theme.cardColor,
       elevation: 3,
@@ -101,7 +106,8 @@ class SettingsView extends ConsumerWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
         secondary: Icon(icon, color: theme.iconTheme.color),
         title: Text(title,
-            style: TextStyle(fontSize: 14, color: theme.textTheme.bodyLarge!.color)),
+            style: TextStyle(
+                fontSize: 14, color: theme.textTheme.bodyLarge!.color)),
         value: value,
         onChanged: onChanged,
       ),
@@ -110,75 +116,78 @@ class SettingsView extends ConsumerWidget {
 
   /// Confirms Logout
   void _confirmLogout(
-    BuildContext context, WidgetRef ref, AuthNotifier authNotifier) {
-  final theme = Theme.of(context);
-  final isDarkMode = theme.brightness == Brightness.dark;
+      BuildContext context, WidgetRef ref, AuthNotifier authNotifier) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
 
-  showDialog(
-    context: context,
-    builder: (BuildContext dialogContext) => AlertDialog(
-      backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Row(
-        children: [
-          Icon(Icons.logout, color: theme.iconTheme.color, size: 26),
-          const SizedBox(width: 10),
-          Text(
-            "Logout",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isDarkMode ? Colors.white : const Color(0xFF2D3142),
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.logout, color: theme.iconTheme.color, size: 26),
+            const SizedBox(width: 10),
+            Text(
+              "Logout",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.white : const Color(0xFF2D3142),
+              ),
             ),
+          ],
+        ),
+        content: Text(
+          "Are you sure you want to log out?",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 16,
+            color: isDarkMode ? Colors.white70 : const Color(0xFF2D3142),
+          ),
+        ),
+        actions: [
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor:
+                  isDarkMode ? Colors.white70 : const Color(0xFF2D3142),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              textStyle: const TextStyle(fontSize: 16),
+            ),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: theme.primaryColor,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              textStyle:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              await authNotifier.logout();
+              ref.invalidate(bacterialGrowthProvider);
+
+              ref.invalidate(authProvider);
+              ref.invalidate(settingsProvider);
+              ref.invalidate(userProvider);
+
+              if (context.mounted) {
+                Navigator.pushNamedAndRemoveUntil(
+                    context, "/login", (route) => false);
+              }
+            },
+            child: const Text("Logout"),
           ),
         ],
       ),
-      content: Text(
-        "Are you sure you want to log out?",
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 16,
-          color: isDarkMode ? Colors.white70 : const Color(0xFF2D3142),
-        ),
-      ),
-      actions: [
-        TextButton(
-          style: TextButton.styleFrom(
-            foregroundColor: isDarkMode ? Colors.white70 : const Color(0xFF2D3142),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            textStyle: const TextStyle(fontSize: 16),
-          ),
-          onPressed: () => Navigator.pop(dialogContext),
-          child: const Text("Cancel"),
-        ),
-        TextButton(
-          style: TextButton.styleFrom(
-            foregroundColor: theme.primaryColor,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          onPressed: () async {
-            Navigator.pop(dialogContext);
-            await authNotifier.logout();
-
-            // Reset settings and user data before switching pages
-            ref.invalidate(settingsProvider);
-            ref.invalidate(userProvider);
-
-            // Ensure full switch to login
-            if (context.mounted) {
-              Navigator.pushNamedAndRemoveUntil(context, "/login", (route) => false);
-            }
-          },
-          child: const Text("Logout"),
-        ),
-      ],
-    ),
-  );
-}
+    );
+  }
 
   /// Confirms Delete Account
-  void _confirmDeleteAccount(
-      BuildContext context, AuthNotifier authNotifier, String email) {
+  void _confirmDeleteAccount(BuildContext context, WidgetRef ref,
+      AuthNotifier authNotifier, String email) {
     TextEditingController passwordController = TextEditingController();
 
     showDialog(
@@ -250,10 +259,25 @@ class SettingsView extends ConsumerWidget {
               }
 
               try {
+                // Ensure password is correct before proceeding
+                await authNotifier.reauthenticateUser(password);
+
+                // Get user ID and delete Firestore user data
+                final userId = authNotifier.state.firebaseUser?.uid;
+                if (userId != null) {
+                  await ref.read(userProvider.notifier).deleteUserData(userId);
+                }
+
+                // Delete the Firebase account
                 await authNotifier.reauthenticateAndDelete(email, password);
+                ref.invalidate(bacterialGrowthProvider);
 
+                ref.invalidate(authProvider);
+                ref.invalidate(settingsProvider);
+                ref.invalidate(userProvider);
+
+                // Close dialog and navigate to login
                 Navigator.pop(dialogContext);
-
                 Navigator.pushNamedAndRemoveUntil(
                     context, "/login", (route) => false);
               } catch (e) {
@@ -270,7 +294,8 @@ class SettingsView extends ConsumerWidget {
     );
   }
 
-  void _changeEmail(BuildContext context, AuthNotifier authNotifier, WidgetRef ref) {
+  void _changeEmail(
+      BuildContext context, AuthNotifier authNotifier, WidgetRef ref) {
     TextEditingController emailController = TextEditingController();
 
     showDialog(
@@ -337,15 +362,16 @@ class SettingsView extends ConsumerWidget {
               }
 
               try {
-              await authNotifier.updateEmail(newEmail);
+                await authNotifier.updateEmail(newEmail);
 
-              final uid = authNotifier.state.firebaseUser?.uid;
-              if (uid != null) {
-                await ref.read(userProvider.notifier).updateUserEmail(uid, newEmail);
-              }
+                final uid = authNotifier.state.firebaseUser?.uid;
+                if (uid != null) {
+                  await ref
+                      .read(userProvider.notifier)
+                      .updateUserEmail(uid, newEmail);
+                }
 
-              await ref.read(userProvider.notifier).loadUserData();
-
+                await ref.read(userProvider.notifier).loadUserData();
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(

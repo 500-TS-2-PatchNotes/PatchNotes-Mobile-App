@@ -13,9 +13,9 @@ final settingsProvider =
 
   auth.authStateChanges().listen((user) {
     if (user == null) {
-      notifier.resetSettings(); // Clear settings on logout
+      notifier.resetSettings();
     } else {
-      notifier.loadSettings(); // Load new settings on login
+      notifier.loadSettings(); 
     }
   });
 
@@ -28,7 +28,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
 
   SettingsNotifier(this._firestoreService, this._auth)
       : super(SettingsState()) {
-    loadSettings(); // Load settings initially
+    loadSettings(); 
   }
 
   Future<void> loadSettings() async {
@@ -54,15 +54,16 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
         if (mounted) state = state.copyWith(isLoading: false);
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         state = state.copyWith(
             errorMessage: "Error loading settings: $e", isLoading: false);
+      }
     }
   }
 
   void resetSettings() {
     if (!mounted) return;
-    state = SettingsState(); // Fully reset state
+    state = SettingsState();
     print("🔄 User data reset");
   }
 

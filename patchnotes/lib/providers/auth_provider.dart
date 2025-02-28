@@ -62,6 +62,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         await _ref
             .read(userProvider.notifier)
             .initializeNewUser(user.uid, fName, lName, email);
+
+        await _ref.read(userProvider.notifier).loadUserData();
         state = state.copyWith(firebaseUser: user);
       }
     }, "Registration failed");
@@ -72,7 +74,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _ref.read(userProvider.notifier).resetUserData();
     state = AuthState();
 
-    // Navigate to login screen
     Future.microtask(() {
       _ref
           .read(navigatorKeyProvider)
@@ -102,6 +103,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
 
       await _authService.reauthenticateAndDelete(email, password);
+      await _ref
+          .read(firebaseStorageServiceProvider)
+          .deleteProfilePicture(user.uid);
+
       await _deleteUserData(user.uid);
 
       _ref.read(userProvider.notifier).resetUserData();
@@ -131,19 +136,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> updateEmail(String newEmail) async {
-  await _handleAuthOperation(() async {
-    final user = _auth.currentUser;
-    if (user != null) {
-      await user.verifyBeforeUpdateEmail(newEmail);
+    await _handleAuthOperation(() async {
+      final user = _auth.currentUser;
+      if (user != null) {
+        await user.verifyBeforeUpdateEmail(newEmail);
 
-      await _ref.read(userProvider.notifier).updateUserEmail(user.uid, newEmail);
+        await _ref
+            .read(userProvider.notifier)
+            .updateUserEmail(user.uid, newEmail);
 
-      await _ref.read(userProvider.notifier).loadUserData();
-    }
-  }, "Failed to update email");
-}
-
-
+        await _ref.read(userProvider.notifier).loadUserData();
+      }
+    }, "Failed to update email");
+  }
 
   Future<void> updatePassword(String newPassword) async {
     await _handleAuthOperation(() async {
