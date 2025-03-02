@@ -174,6 +174,18 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
                         ),
                       ),
                       SizedBox(height: screenHeight * 0.06),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushReplacementNamed(context, "/admin");
+                        },
+                        child: Text(
+                          'Login as Admin',
+                          style: TextStyle(
+                            color: const Color(0xFF4A5568),
+                            fontSize: textSize,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
