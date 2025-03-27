@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:patchnotes/providers/bg_provider.dart';
 import 'package:patchnotes/providers/settings_provider.dart';
 import 'package:patchnotes/providers/auth_provider.dart';
 import 'package:patchnotes/providers/user_provider.dart';
@@ -167,7 +166,6 @@ class SettingsView extends ConsumerWidget {
             onPressed: () async {
               Navigator.pop(dialogContext);
               await authNotifier.logout();
-              ref.invalidate(bacterialGrowthProvider);
 
               ref.invalidate(authProvider);
               ref.invalidate(settingsProvider);
@@ -270,7 +268,6 @@ class SettingsView extends ConsumerWidget {
 
                 // Delete the Firebase account
                 await authNotifier.reauthenticateAndDelete(email, password);
-                ref.invalidate(bacterialGrowthProvider);
 
                 ref.invalidate(authProvider);
                 ref.invalidate(settingsProvider);

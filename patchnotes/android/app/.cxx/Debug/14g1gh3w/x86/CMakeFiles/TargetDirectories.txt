@@ -1,0 +1,2 @@
+/Users/joshuadebele/PatchNotes-Mobile-App/patchnotes/android/app/.cxx/Debug/14g1gh3w/x86/CMakeFiles/edit_cache.dir
+/Users/joshuadebele/PatchNotes-Mobile-App/patchnotes/android/app/.cxx/Debug/14g1gh3w/x86/CMakeFiles/rebuild_cache.dir

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:patchnotes/providers/bg_provider.dart';
 import 'package:patchnotes/providers/user_provider.dart';
 import 'package:patchnotes/providers/bluetooth_provider.dart';
 import '../widgets/top_navbar.dart';
@@ -47,7 +46,6 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
 
     if (!mounted) return;
 
-    // Optionally set a temporary placeholder
     setState(() {
       final currentState = ref.read(userProvider);
       ref.read(userProvider.notifier).state = currentState.copyWith(
@@ -55,15 +53,12 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
       );
     });
 
-    // Upload image and update Firestore with the new profile picture.
     await userNotifier.updateProfilePicture(imageBytes);
 
     if (!mounted) return;
 
-    // Reload user data to fetch the new image URL.
     await ref.read(userProvider.notifier).loadUserData();
 
-    // Update the version so the image URL query parameter changes only on a real update.
     setState(() {
       _profilePicVersion = DateTime.now().millisecondsSinceEpoch.toString();
     });
@@ -72,13 +67,11 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
   @override
   Widget build(BuildContext context) {
     final userState = ref.watch(userProvider);
-    final growthState = ref.watch(bacterialGrowthProvider);
     final userNotifier = ref.read(userProvider.notifier);
 
     final account = userState.account;
     final appUser = userState.appUser;
 
-    // Determine device status based on bluetoothProvider's state.
     final bluetoothState = ref.watch(bluetoothProvider);
     final deviceStatus = bluetoothState.connectedDevice != null
         ? "Connected: ${bluetoothState.connectedDevice!.name}"
@@ -159,7 +152,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                 "Device Status", deviceStatus, Icons.bluetooth_connected),
             const SizedBox(height: 5),
             _buildInfoCard("Wound Status",
-                "Current State: ${growthState.currentState}", Icons.healing),
+                "Current State: Healthy", Icons.healing),
             const SizedBox(height: 5),
 
             // Medical Notes Section**
@@ -184,7 +177,6 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
     );
   }
 
-  /// Editable Field Card
   Widget _buildEditableCard({
     required String title,
     required IconData icon,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:patchnotes/providers/bg_provider.dart';
 import 'package:patchnotes/providers/navigation.dart';
 import 'package:patchnotes/views/dashboard.dart';
 import 'package:patchnotes/views/insights.dart';
@@ -35,7 +34,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(tabIndexProvider);
-    final growthState = ref.watch(bacterialGrowthProvider);
 
     final List<Widget> pages = [
       const DashboardView(),
@@ -52,7 +50,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       ),
       bottomNavigationBar: BottomNavbar(
         currentIndex: currentIndex,
-        latestState: growthState.currentState,
         onTabTapped: (index) =>
             ref.read(tabIndexProvider.notifier).state = index,
       ),

@@ -5,10 +5,9 @@ import 'package:patchnotes/providers/user_provider.dart';
 import 'package:patchnotes/states/settings_state.dart';
 import 'package:patchnotes/services/firestore_service.dart';
 
-// Settings Provider
 final settingsProvider =
     StateNotifierProvider<SettingsNotifier, SettingsState>((ref) {
-  final auth = ref.watch(firebaseAuthProvider); // Watch for auth changes
+  final auth = ref.watch(firebaseAuthProvider); 
   final notifier = SettingsNotifier(ref.read(firestoreServiceProvider), auth);
 
   auth.authStateChanges().listen((user) {

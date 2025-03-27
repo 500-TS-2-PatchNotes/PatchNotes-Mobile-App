@@ -78,9 +78,9 @@ class BluetoothManager {
     try {
       await _connectedDevice!.disconnect();
       _connectedDevice = null;
-      print("✅ Fully disconnected from device");
+      print("Fully disconnected from device");
     } catch (e) {
-      print("❌ Failed to disconnect: $e");
+      print("Failed to disconnect: $e");
     }
   }
 }

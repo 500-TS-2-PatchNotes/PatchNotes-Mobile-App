@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:patchnotes/providers/bg_provider.dart';
 import '../widgets/top_navbar.dart';
 import '../utils/testImage.dart';
 
@@ -9,8 +8,9 @@ class InsightsView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final growthState = ref.watch(bacterialGrowthProvider);
     final theme = Theme.of(context);
+
+    final String woundStatus = 'Healthy';
 
     return Scaffold(
       appBar: const Header(title: "Insights"),
@@ -21,13 +21,13 @@ class InsightsView extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildStatusContainer(growthState.currentState, theme),
+                _buildStatusContainer(woundStatus, theme),
                 const SizedBox(height: 20),
                 _buildSectionTitle('Most Recent Wound Images', theme),
                 const SizedBox(height: 20),
                 _buildImageGrid(theme),
                 const SizedBox(height: 24),
-                _buildTipContainer(growthState.currentState, theme),
+                _buildTipContainer(woundStatus, theme),
                 const SizedBox(height: 24),
                 _buildLastSyncedInfo(theme),
                 const SizedBox(height: 24),
@@ -43,7 +43,7 @@ class InsightsView extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _getStateBackgroundColor(state, theme),
+        color: _getStateBackgroundColor(state),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -125,15 +125,11 @@ class InsightsView extends ConsumerWidget {
   String _getStatusMessage(String state) {
     switch (state) {
       case 'Healthy':
-        return 'Status: Your wound is healing well. Good job!';
-      case 'Observation':
-        return 'Status: Your wound needs monitoring. Keep an eye on it!';
-      case 'Early':
-        return 'Status: Your wound shows signs of infection. Take action!';
-      case 'Severe':
-        return 'Status: Your wound is severely infected. Seek medical advice!';
-      case 'Critical':
-        return 'Status: Your wound is critical. Visit a healthcare provider ASAP!';
+        return 'Status: Your wound is healing well. Keep it up!';
+      case 'Monitor Needed':
+        return 'Status: Monitor your wound. Follow care instructions.';
+      case 'Unhealthy':
+        return 'Status: Wound condition is serious. Seek medical attention.';
       default:
         return 'Status: Unknown wound status.';
     }
@@ -142,17 +138,13 @@ class InsightsView extends ConsumerWidget {
   String _getTip(String state) {
     switch (state) {
       case 'Healthy':
-        return 'Tip: Keep the wound clean and moisturized.';
-      case 'Observation':
-        return 'Tip: Ensure the wound is properly dressed.';
-      case 'Early':
-        return 'Tip: Clean the wound with an antiseptic and monitor it closely.';
-      case 'Severe':
-        return 'Tip: Consult a healthcare professional for immediate attention.';
-      case 'Critical':
-        return 'Tip: Seek emergency medical care immediately!';
+        return 'Tip: Keep the wound clean and covered to prevent infection.';
+      case 'Monitor Needed':
+        return 'Tip: Change bandages regularly and monitor for any changes.';
+      case 'Unhealthy':
+        return 'Tip: Contact your healthcare provider for professional treatment.';
       default:
-        return 'Tip: Unknown advice.';
+        return 'Tip: No specific advice available.';
     }
   }
 
@@ -175,20 +167,16 @@ class InsightsView extends ConsumerWidget {
     return '$hour:$minute $period';
   }
 
-  Color _getStateBackgroundColor(String state, ThemeData theme) {
+  Color _getStateBackgroundColor(String state) {
     switch (state) {
       case 'Healthy':
         return Colors.cyan.withOpacity(0.2);
-      case 'Observation':
-        return Colors.amber.withOpacity(0.2);
-      case 'Early':
+      case 'Monitor Needed':
         return Colors.orange.withOpacity(0.2);
-      case 'Severe':
-        return Colors.red.withOpacity(0.2);
-      case 'Critical':
+      case 'Unhealthy':
         return Colors.purple.withOpacity(0.2);
       default:
-        return theme.colorScheme.surface.withOpacity(0.2);
+        return Colors.grey.withOpacity(0.2);
     }
   }
 }

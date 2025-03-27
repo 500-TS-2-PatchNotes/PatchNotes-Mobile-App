@@ -5,7 +5,7 @@ import 'package:patchnotes/providers/auth_provider.dart';
 import 'package:patchnotes/providers/navigation.dart';
 import 'package:patchnotes/providers/settings_provider.dart';
 import 'package:patchnotes/providers/user_provider.dart';
-import 'package:patchnotes/views/admin.dart';
+import 'package:patchnotes/views/admin/admin.dart';
 import 'package:patchnotes/views/authentication/login.dart';
 import 'package:patchnotes/views/authentication/register.dart';
 import 'package:patchnotes/views/mainscreen.dart';

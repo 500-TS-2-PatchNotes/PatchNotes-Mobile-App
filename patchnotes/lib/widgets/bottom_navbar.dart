@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 class BottomNavbar extends StatelessWidget {
   final int currentIndex;
-  final String latestState;
-  final Function(int) onTabTapped; // It Passes the selected tab to the MainScreen
+  final Function(int) onTabTapped; 
 
   const BottomNavbar({
     super.key,
     required this.currentIndex,
-    required this.latestState,
     required this.onTabTapped,
   });
 

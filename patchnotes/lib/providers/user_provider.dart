@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:patchnotes/providers/auth_provider.dart';
-import 'package:patchnotes/providers/bg_provider.dart';
 import 'package:patchnotes/states/user_state.dart';
 import '../services/firestore_service.dart';
 import '../services/firebase_storage.dart';
@@ -53,12 +52,8 @@ class UserNotifier extends StateNotifier<UserState> {
   
   void handleAuthStateChanged(User? user) {
     if (user == null) {
-      // When logged out, pause the graph simulation.
-      ref.read(bacterialGrowthProvider.notifier).pauseGraph();
       resetUserData();
     } else {
-      // When logged in, resume the graph simulation.
-      ref.read(bacterialGrowthProvider.notifier).resumeGraph();
       _listenToUserChanges(user.uid);
     }
   }

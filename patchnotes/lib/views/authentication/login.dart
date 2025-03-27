@@ -22,6 +22,57 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
     super.dispose();
   }
 
+  void _showAdminAccessDialog(BuildContext context) {
+    final TextEditingController adminController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.admin_panel_settings, color: Colors.deepPurpleAccent),
+            SizedBox(width: 10),
+            Text('Admin', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: TextField(
+          controller: adminController,
+          obscureText: true,
+          decoration: InputDecoration(
+            hintText: 'Enter code',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepPurpleAccent,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              if (adminController.text.trim() == "admin") {
+                Navigator.pop(context);
+                Navigator.pushReplacementNamed(context, "/admin");
+              } else {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Invalid admin code.')),
+                );
+              }
+            },
+            child: Text('Login', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -173,16 +224,15 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
                           ),
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.06),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushReplacementNamed(context, "/admin");
-                        },
+                      SizedBox(height: screenHeight * 0.02),
+                      GestureDetector(
+                        onTap: () => _showAdminAccessDialog(context),
                         child: Text(
-                          'Login as Admin',
+                          'Admin Access',
                           style: TextStyle(
-                            color: const Color(0xFF4A5568),
-                            fontSize: textSize,
+                            color: Colors.grey,
+                            fontSize: textSize * 0.6,
+                            decoration: TextDecoration.underline,
                           ),
                         ),
                       ),

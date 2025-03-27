@@ -32,7 +32,6 @@ class BluetoothNotifier extends StateNotifier<AppBluetoothState> {
   }
 
   void _listenToAdapterState() {
-    // Listen to adapter state changes and update state.
     FlutterBluePlus.adapterState.listen((newState) {
       state = state.copyWith(adapterState: newState);
     });
