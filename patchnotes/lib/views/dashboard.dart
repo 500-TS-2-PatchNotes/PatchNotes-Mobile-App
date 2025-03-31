@@ -1,8 +1,13 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:patchnotes/models/calibration_level.dart';
+import 'package:patchnotes/providers/auth_provider.dart';
 import 'package:patchnotes/providers/bluetooth_provider.dart';
+import 'package:patchnotes/providers/calibration_provider.dart';
+import 'package:patchnotes/providers/user_provider.dart';
 import 'package:patchnotes/widgets/camera_capture.dart';
 import '../providers/navigation.dart';
 import '../widgets/top_navbar.dart';
@@ -244,19 +249,67 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   }
 
   Future<void> _sendImage() async {
+    if (_capturedImage == null) return;
     setState(() => _isSending = true);
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() {
-      _capturedImage = null;
-      _selectedColor = null;
-      _isSending = false;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Image sent!"),
-        backgroundColor: Colors.green,
-      ),
-    );
+
+    final storageService = ref.read(firebaseStorageServiceProvider);
+    final firestoreService = ref.read(firestoreServiceProvider);
+    final calibrationLevels = ref.read(calibrationStreamProvider).value ?? [];
+    final user = ref.read(authProvider).firebaseUser;
+    final uid = user?.uid;
+
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text("User not authenticated."),
+            backgroundColor: Colors.red),
+      );
+      setState(() => _isSending = false);
+      return;
+    }
+
+    try {
+      final fileBytes = await File(_capturedImage!.path).readAsBytes();
+      final imageUrl = await storageService.uploadWoundImage(uid, fileBytes);
+
+      if (imageUrl != null) {
+        final double predictedLevel = 1.0 +
+            (DateTime.now().second % 6); 
+        final String state =
+            _getWoundStateFromLevel(calibrationLevels, predictedLevel);
+        final String message = _getStatusMessage(state);
+        final String tip = _getTip(state);
+
+        // Push all wound data to Firestore
+        await firestoreService.addWoundImage(uid, imageUrl);
+        await firestoreService.updateWound(uid, {
+          'cfu': predictedLevel,
+          'woundStatus': state,
+          'message': message,
+          'tip': tip,
+          'lastSynced': Timestamp.now(),
+          'imageTimestamp': Timestamp.now(),
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text("Image and status uploaded!"),
+              backgroundColor: Colors.green),
+        );
+      } else {
+        throw Exception("Image upload failed.");
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+      );
+    } finally {
+      setState(() {
+        _capturedImage = null;
+        _selectedColor = null;
+        _isSending = false;
+      });
+    }
   }
 
   Color _getStateColor(String state) {
@@ -281,5 +334,38 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       default:
         return Icons.info;
     }
+  }
+
+  String _getStatusMessage(String state) {
+    switch (state) {
+      case 'Healthy':
+        return 'Status: Your wound is healing well. Keep it up!';
+      case 'Monitor Needed':
+        return 'Status: Monitor your wound. Follow care instructions.';
+      case 'Unhealthy':
+        return 'Status: Wound condition is serious. Seek medical attention.';
+      default:
+        return 'Status: Unknown wound status.';
+    }
+  }
+
+  String _getTip(String state) {
+    switch (state) {
+      case 'Healthy':
+        return 'Tip: Keep the wound clean and covered to prevent infection.';
+      case 'Monitor Needed':
+        return 'Tip: Change bandages regularly and monitor for any changes.';
+      case 'Unhealthy':
+        return 'Tip: Contact your healthcare provider for professional treatment.';
+      default:
+        return 'Tip: No specific advice available.';
+    }
+  }
+
+  String _getWoundStateFromLevel(List<CalibrationLevel> levels, double level) {
+    for (int i = 0; i < levels.length; i++) {
+      if (level <= levels[i].cfu) return levels[i].healthState;
+    }
+    return levels.last.healthState;
   }
 }

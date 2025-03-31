@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:patchnotes/providers/user_provider.dart';
 import '../widgets/top_navbar.dart';
-import '../utils/testImage.dart';
 
 class InsightsView extends ConsumerWidget {
   const InsightsView({Key? key}) : super(key: key);
 
+  String _getStatusMessage(String stateMessage) => stateMessage;
+  String _getTip(String tip) => tip;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final userState = ref.watch(userProvider);
+    final wound = userState.wound;
 
-    final String woundStatus = 'Healthy';
+    final images = wound?.woundImages ?? [];
+    final woundStatus = wound?.woundStatus ?? 'Unknown';
+    final woundTip = wound?.insightsTip ?? 'No tip available.';
+    final statusMessage = wound?.insightsMessage ?? 'Status unknown.';
 
     return Scaffold(
       appBar: const Header(title: "Insights"),
@@ -25,7 +33,7 @@ class InsightsView extends ConsumerWidget {
                 const SizedBox(height: 20),
                 _buildSectionTitle('Most Recent Wound Images', theme),
                 const SizedBox(height: 20),
-                _buildImageGrid(theme),
+                _buildImageGrid(theme, images),
                 const SizedBox(height: 24),
                 _buildTipContainer(woundStatus, theme),
                 const SizedBox(height: 24),
@@ -61,13 +69,14 @@ class InsightsView extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Text(
         title,
-        style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        style:
+            theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         textAlign: TextAlign.center,
       ),
     );
   }
 
-  Widget _buildImageGrid(ThemeData theme) {
+  Widget _buildImageGrid(ThemeData theme, List<String> images) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: GridView.builder(
@@ -81,13 +90,24 @@ class InsightsView extends ConsumerWidget {
           childAspectRatio: 1.5,
         ),
         itemBuilder: (context, index) {
-          return Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: theme.dividerColor),
+          if (index < images.length) {
+            return ClipRRect(
               borderRadius: BorderRadius.circular(8),
-            ),
-            child: const RandomWoundImageWidget(),
-          );
+              child: Image.network(
+                images[index],
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+              ),
+            );
+          } else {
+            return Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: theme.dividerColor),
+                borderRadius: BorderRadius.circular(8),
+                color: theme.cardColor,
+              ),
+            );
+          }
         },
       ),
     );
@@ -104,7 +124,8 @@ class InsightsView extends ConsumerWidget {
         ),
         child: Text(
           _getTip(state),
-          style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+          style:
+              theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
           textAlign: TextAlign.center,
         ),
       ),
@@ -122,40 +143,24 @@ class InsightsView extends ConsumerWidget {
     );
   }
 
-  String _getStatusMessage(String state) {
-    switch (state) {
-      case 'Healthy':
-        return 'Status: Your wound is healing well. Keep it up!';
-      case 'Monitor Needed':
-        return 'Status: Monitor your wound. Follow care instructions.';
-      case 'Unhealthy':
-        return 'Status: Wound condition is serious. Seek medical attention.';
-      default:
-        return 'Status: Unknown wound status.';
-    }
-  }
-
-  String _getTip(String state) {
-    switch (state) {
-      case 'Healthy':
-        return 'Tip: Keep the wound clean and covered to prevent infection.';
-      case 'Monitor Needed':
-        return 'Tip: Change bandages regularly and monitor for any changes.';
-      case 'Unhealthy':
-        return 'Tip: Contact your healthcare provider for professional treatment.';
-      default:
-        return 'Tip: No specific advice available.';
-    }
-  }
-
   String _formatDateTime(DateTime dateTime) {
     return '${_formatMonth(dateTime.month)} ${dateTime.day}, ${dateTime.year}, ${_formatTime(dateTime)}';
   }
 
   String _formatMonth(int month) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-      'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
     return months[month - 1];
   }

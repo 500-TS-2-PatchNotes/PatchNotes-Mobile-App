@@ -170,6 +170,9 @@ class SettingsView extends ConsumerWidget {
               ref.invalidate(authProvider);
               ref.invalidate(settingsProvider);
               ref.invalidate(userProvider);
+              ref.invalidate(firebaseAuthProvider);
+              ref.invalidate(firestoreServiceProvider);
+              ref.invalidate(firebaseStorageServiceProvider);
 
               if (context.mounted) {
                 Navigator.pushNamedAndRemoveUntil(

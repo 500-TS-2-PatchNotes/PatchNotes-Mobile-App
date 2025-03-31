@@ -116,12 +116,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> _deleteUserData(String uid) async {
     try {
-      final firestore = _ref.read(firestoreServiceProvider);
-      await Future.wait([
-        firestore.userCollection.doc(uid).delete(),
-        firestore.accountCollection.doc(uid).delete(),
-        firestore.woundCollection.doc(uid).delete(),
-      ]);
+      await _ref.read(firestoreServiceProvider).deleteAllUserData(uid);
     } catch (e) {
       print("Error deleting user data: $e");
     }

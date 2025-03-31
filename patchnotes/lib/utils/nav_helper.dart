@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../views/dashboard.dart';
 import '../views/insights.dart';
-import '../views/notifications.dart';
 import '../views/profile.dart';
 import '../views/settings.dart';
 
@@ -17,12 +16,9 @@ void navigateToPage(BuildContext context, int index, String latestState) {
       page = InsightsView();
       break;
     case 2:
-      page = NotificationsView();
-      break;
-    case 3:
       page = ProfileView();
       break;
-    case 4:
+    case 3:
       page = SettingsView();
       break;
     default:
