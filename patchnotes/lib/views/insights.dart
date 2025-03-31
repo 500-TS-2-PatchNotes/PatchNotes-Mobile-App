@@ -6,9 +6,6 @@ import '../widgets/top_navbar.dart';
 class InsightsView extends ConsumerWidget {
   const InsightsView({Key? key}) : super(key: key);
 
-  String _getStatusMessage(String stateMessage) => stateMessage;
-  String _getTip(String tip) => tip;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -29,13 +26,13 @@ class InsightsView extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildStatusContainer(woundStatus, theme),
+                _buildStatusContainer(statusMessage, woundStatus, theme),
                 const SizedBox(height: 20),
                 _buildSectionTitle('Most Recent Wound Images', theme),
                 const SizedBox(height: 20),
                 _buildImageGrid(theme, images),
                 const SizedBox(height: 24),
-                _buildTipContainer(woundStatus, theme),
+                _buildTipContainer(woundTip, theme),
                 const SizedBox(height: 24),
                 _buildLastSyncedInfo(theme),
                 const SizedBox(height: 24),
@@ -47,7 +44,7 @@ class InsightsView extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusContainer(String state, ThemeData theme) {
+  Widget _buildStatusContainer(String message, String state, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -55,7 +52,7 @@ class InsightsView extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        _getStatusMessage(state),
+        message,
         style: theme.textTheme.titleMedium?.copyWith(
           fontWeight: FontWeight.bold,
         ),
@@ -87,7 +84,7 @@ class InsightsView extends ConsumerWidget {
           crossAxisCount: 3,
           crossAxisSpacing: 8,
           mainAxisSpacing: 8,
-          childAspectRatio: 1.5,
+          childAspectRatio: 1,
         ),
         itemBuilder: (context, index) {
           if (index < images.length) {
@@ -113,7 +110,7 @@ class InsightsView extends ConsumerWidget {
     );
   }
 
-  Widget _buildTipContainer(String state, ThemeData theme) {
+  Widget _buildTipContainer(String tip, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Container(
@@ -123,7 +120,7 @@ class InsightsView extends ConsumerWidget {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
-          _getTip(state),
+          tip,
           style:
               theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
           textAlign: TextAlign.center,
@@ -133,43 +130,18 @@ class InsightsView extends ConsumerWidget {
   }
 
   Widget _buildLastSyncedInfo(ThemeData theme) {
+    final now = DateTime.now();
+    final formattedDate =
+        '${now.month}/${now.day}/${now.year} at ${now.hour % 12 == 0 ? 12 : now.hour % 12}:${now.minute.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'PM' : 'AM'}';
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Text(
-        'Last synced: ${_formatDateTime(DateTime.now())}',
+        'Last synced: $formattedDate',
         style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
         textAlign: TextAlign.center,
       ),
     );
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    return '${_formatMonth(dateTime.month)} ${dateTime.day}, ${dateTime.year}, ${_formatTime(dateTime)}';
-  }
-
-  String _formatMonth(int month) {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
-    ];
-    return months[month - 1];
-  }
-
-  String _formatTime(DateTime dateTime) {
-    final hour = dateTime.hour > 12 ? dateTime.hour - 12 : dateTime.hour;
-    final minute = dateTime.minute.toString().padLeft(2, '0');
-    final period = dateTime.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $period';
   }
 
   Color _getStateBackgroundColor(String state) {

@@ -45,8 +45,7 @@ class UserNotifier extends StateNotifier<UserState> {
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSubscription;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
       _accountSubscription;
-  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
-      _woundSubscription;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _woundSubscription;
 
   UserNotifier(this.ref, this._firestoreService, this._storageService)
       : super(UserState());
@@ -93,19 +92,43 @@ class UserNotifier extends StateNotifier<UserState> {
       state = state.copyWith(errorMessage: "Account data stream error: $error");
     });
 
-    _woundSubscription = _firestoreService
-        .getWoundDoc(uid)
-        .withConverter<Map<String, dynamic>>(
-          fromFirestore: (snapshot, _) => snapshot.data()!,
-          toFirestore: (data, _) => data,
-        )
+    _woundSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('wound_data')
         .snapshots()
-        .listen((snapshot) {
-      if (snapshot.exists && snapshot.data() != null) {
-        state = state.copyWith(wound: Wound.fromMap(snapshot.data()!));
+        .listen((snapshot) async {
+      final docs = snapshot.docs;
+
+      QueryDocumentSnapshot<Map<String, dynamic>>? infoDoc;
+      try {
+        infoDoc = docs.firstWhere((doc) => doc.id == 'info');
+      } catch (_) {
+        infoDoc = null;
       }
-    }, onError: (error) {
-      state = state.copyWith(errorMessage: "Wound data stream error: $error");
+
+      final otherDocs = docs.where((doc) => doc.id != 'info').toList();
+
+      if (otherDocs.isEmpty) return;
+
+      // Get latest image data
+      otherDocs.sort((a, b) {
+        final aTime =
+            (a['imageTimestamp'] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
+        final bTime =
+            (b['imageTimestamp'] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
+        return bTime.compareTo(aTime);
+      });
+      final latest = otherDocs.first.data();
+
+      // Combine info + latest
+      final combined = {
+        ...?infoDoc?.data(),
+        ...latest, // latest overrides shared keys
+      };
+
+      final wound = Wound.fromMap(combined);
+      state = state.copyWith(wound: wound);
     });
   }
 
@@ -158,8 +181,12 @@ class UserNotifier extends StateNotifier<UserState> {
       woundImages: [],
       imageTimestamp: Timestamp.now(),
       lastSynced: Timestamp.now(),
-      colour: "",
-      cfu: 0.0,
+      colour: "Green",
+      cfu: 1.0,
+      insightsMessage:
+          "Status: No data available yet. Please take a wound image to receive insights.",
+      insightsTip:
+          "Tip: Capture a clear image or select a wound color to begin analysis.",
     );
 
     try {
@@ -176,12 +203,14 @@ class UserNotifier extends StateNotifier<UserState> {
     try {
       final downloadUrl =
           await _storageService.uploadProfilePicture(state.uid!, imageBytes);
-      if (downloadUrl != null) {
-        final updatedUser = state.appUser!.copyWith(profilePic: downloadUrl);
-        state = state.copyWith(appUser: updatedUser);
 
-        await _firestoreService.updateUser(
-            state.uid!, updatedUser.toFirestore());
+      if (downloadUrl != null) {
+        await _firestoreService.updateUser(state.uid!, {
+          'profilePic': downloadUrl,
+        });
+
+        // Explicitly reload user data after updating Firestore
+        await loadUserData();
       }
     } catch (e) {
       state =

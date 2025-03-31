@@ -6,14 +6,18 @@ import '../models/collections/wound.dart';
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  final CollectionReference userCollection = FirebaseFirestore.instance.collection('users');
+  final CollectionReference userCollection =
+      FirebaseFirestore.instance.collection('users');
 
   DocumentReference getUserDoc(String uid) => userCollection.doc(uid);
-  DocumentReference getAccountDoc(String uid) => getUserDoc(uid).collection('account').doc('settings');
-  DocumentReference getWoundDoc(String uid) => getUserDoc(uid).collection('wound_data').doc('info');
+  DocumentReference getAccountDoc(String uid) =>
+      getUserDoc(uid).collection('account').doc('settings');
+  DocumentReference getWoundDoc(String uid) =>
+      getUserDoc(uid).collection('wound_data').doc('info');
 
   /// CREATE
-  Future<void> setUserData(String uid, AppUser user, Account account, Wound wound) async {
+  Future<void> setUserData(
+      String uid, AppUser user, Account account, Wound wound) async {
     WriteBatch batch = _db.batch();
 
     final userRef = getUserDoc(uid);
@@ -54,7 +58,8 @@ class FirestoreService {
     await _updateDocument(getUserDoc(uid), userData);
   }
 
-  Future<void> updateAccount(String uid, Map<String, dynamic> accountData) async {
+  Future<void> updateAccount(
+      String uid, Map<String, dynamic> accountData) async {
     await _updateDocument(getAccountDoc(uid), accountData);
   }
 
@@ -93,7 +98,8 @@ class FirestoreService {
 
       currentImages.add(imageUrl);
 
-      await woundDoc.update({'woundImages': currentImages});
+      await woundDoc
+          .set({'woundImages': currentImages}, SetOptions(merge: true));
     } catch (e) {
       print("Failed to add wound image: $e");
       rethrow;
@@ -122,7 +128,8 @@ class FirestoreService {
     }
   }
 
-  Future<void> _updateDocument(DocumentReference docRef, Map<String, dynamic> data) async {
+  Future<void> _updateDocument(
+      DocumentReference docRef, Map<String, dynamic> data) async {
     try {
       await docRef.set(data, SetOptions(merge: true));
     } catch (e) {

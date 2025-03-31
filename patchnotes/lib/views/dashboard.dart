@@ -35,8 +35,13 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     final theme = Theme.of(context);
     final isConnected = bluetoothState.connectedDevice != null;
 
-    final stateColor = _getStateColor(woundStatus);
-    final stateIcon = _getStateIcon(woundStatus);
+    final wound = ref.watch(userProvider).wound;
+    final cfu = wound?.cfu ?? 0.0;
+    final calibrationLevels = ref.watch(calibrationStreamProvider).value ?? [];
+
+    final woundState = _getWoundStateFromLevel(calibrationLevels, cfu);
+    final stateColor = _getStateColor(woundState);
+    final stateIcon = _getStateIcon(woundState);
 
     return Scaffold(
       appBar: const Header(title: "Dashboard"),
@@ -47,7 +52,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 10),
-              _buildStateIndicator(stateIcon, stateColor, woundStatus),
+              _buildStateIndicator(stateIcon, stateColor, woundState),
               const SizedBox(height: 50),
               _buildImagePreview(theme),
               const SizedBox(height: 40),
@@ -219,7 +224,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
             ),
             value: _selectedColor,
             onChanged: (value) => setState(() => _selectedColor = value),
-            items: ['Red', 'Yellow', 'Green']
+            items: ['Blue', 'Yellow', 'Green']
                 .map((color) =>
                     DropdownMenuItem(value: color, child: Text(color)))
                 .toList(),
@@ -273,27 +278,65 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       final imageUrl = await storageService.uploadWoundImage(uid, fileBytes);
 
       if (imageUrl != null) {
-        final double predictedLevel = 1.0 +
-            (DateTime.now().second % 6); 
-        final String state =
-            _getWoundStateFromLevel(calibrationLevels, predictedLevel);
-        final String message = _getStatusMessage(state);
-        final String tip = _getTip(state);
-
-        // Push all wound data to Firestore
         await firestoreService.addWoundImage(uid, imageUrl);
-        await firestoreService.updateWound(uid, {
-          'cfu': predictedLevel,
-          'woundStatus': state,
+
+        double? finalCfu;
+        String finalState = 'Unknown';
+        String? selectedColorHex;
+
+        // Map selected color to calibration data
+        if (_selectedColor != null) {
+          final mapping = {
+            'Blue': Color(0xFF016BC8),
+            'Green': Color(0xFF91A55E),
+            'Yellow': Color(0xFFF1BB00),
+          };
+
+          final colorCode = mapping[_selectedColor!];
+
+          // Find the matching calibration level
+          final match = calibrationLevels.firstWhere(
+            (level) => level.color == colorCode,
+            orElse: () => calibrationLevels.first,
+          );
+
+          finalCfu = match.cfu;
+          finalState = match.healthState;
+          selectedColorHex =
+              '#${match.color.value.toRadixString(16).substring(2).toUpperCase()}';
+        } else {
+          // Simulate a predicted value
+          final predictedLevel = 1.0 + (DateTime.now().second % 6);
+          finalCfu = predictedLevel;
+          finalState =
+              _getWoundStateFromLevel(calibrationLevels, predictedLevel);
+        }
+
+        final String message = _getStatusMessage(finalState);
+        final String tip = _getTip(finalState);
+
+        final infoDocRef = FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .collection('wound_data')
+            .doc('info');
+
+        await infoDocRef.update({
+          'woundImages': FieldValue.arrayUnion([imageUrl]),
+          'cfu': finalCfu,
+          'woundStatus': finalState,
           'message': message,
           'tip': tip,
-          'lastSynced': Timestamp.now(),
+          'insightsMessage': message,
+          'insightsTip': tip,
+          'colour': _selectedColor ?? "Green",
           'imageTimestamp': Timestamp.now(),
+          'lastSynced': Timestamp.now(),
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text("Image and status uploaded!"),
+              content: Text("Image and wound status updated!"),
               backgroundColor: Colors.green),
         );
       } else {
@@ -363,6 +406,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   }
 
   String _getWoundStateFromLevel(List<CalibrationLevel> levels, double level) {
+    if (levels.isEmpty) return 'Unknown'; // <-- handle empty levels safely
     for (int i = 0; i < levels.length; i++) {
       if (level <= levels[i].cfu) return levels[i].healthState;
     }

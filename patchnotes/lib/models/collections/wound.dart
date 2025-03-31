@@ -17,8 +17,8 @@ class Wound {
     this.lastSynced,
     this.colour,
     this.cfu,
-    this.insightsMessage,
-    this.insightsTip,
+    this.insightsMessage = "Status: No data available yet. Please take a wound image to receive insights.",
+    this.insightsTip = "Tip: Capture a clear image or select a wound color to begin analysis.",
   });
 
   factory Wound.fromMap(Map<String, dynamic>? data) {
@@ -26,19 +26,17 @@ class Wound {
 
     return Wound(
       woundStatus: data['woundStatus'] ?? "",
-      woundImages: List<String>.from(data['woundImages'] ?? []),
-      imageTimestamp: data['imageTimestamp'] is Timestamp
-          ? data['imageTimestamp'] as Timestamp
-          : Timestamp.fromMillisecondsSinceEpoch(
-              int.tryParse(data['imageTimestamp'].toString()) ?? 0),
-      lastSynced: data['lastSynced'] is Timestamp
-          ? data['lastSynced'] as Timestamp
-          : Timestamp.fromMillisecondsSinceEpoch(
-              int.tryParse(data['lastSynced'].toString()) ?? 0),
+      woundImages: data['woundImages'] != null
+          ? List<String>.from(data['woundImages'])
+          : [],
+      imageTimestamp: _parseTimestamp(data['imageTimestamp']),
+      lastSynced: _parseTimestamp(data['lastSynced']),
       colour: data['colour'] ?? "",
-      cfu: (data['cfu'] ?? 0.0).toDouble(),
-      insightsMessage: data['insightsMessage'] ?? "",
-      insightsTip: data['insightsTip'] ?? "",
+      cfu: (data['cfu'] is num) ? (data['cfu'] as num).toDouble() : 0.0,
+      insightsMessage: data['insightsMessage'] ??
+          "Status: No data available yet. Please take a wound image to receive insights.",
+      insightsTip: data['insightsTip'] ??
+          "Tip: Capture a clear image or select a wound color to begin analysis.",
     );
   }
 
@@ -47,39 +45,19 @@ class Wound {
     SnapshotOptions? options,
   ) {
     final data = snapshot.data();
-
-    if (data == null) {
-      return Wound();
-    }
-
-    return Wound(
-      woundStatus: data['woundStatus'],
-      woundImages: data['woundImages'] is List
-          ? List<String>.from(data['woundImages'])
-          : null,
-      imageTimestamp: data['imageTimestamp'] is Timestamp
-          ? data['imageTimestamp'] as Timestamp
-          : null,
-      lastSynced: data['lastSynced'] is Timestamp
-          ? data['lastSynced'] as Timestamp
-          : null,
-      colour: data['colour'],
-      cfu: (data['cfu'] is num) ? (data['cfu'] as num).toDouble() : null,
-      insightsMessage: data['insightsMessage'],
-      insightsTip: data['insightsTip'],
-    );
+    return Wound.fromMap(data);
   }
 
   Map<String, dynamic> toFirestore() {
     return {
-      if (woundStatus != null) "woundStatus": woundStatus,
-      if (woundImages != null) "woundImages": woundImages,
-      if (imageTimestamp != null) "imageTimestamp": imageTimestamp,
-      if (lastSynced != null) "lastSynced": lastSynced,
-      if (colour != null) "colour": colour,
-      if (cfu != null) "cfu": cfu,
-      if (insightsMessage != null) "insightsMessage": insightsMessage,
-      if (insightsTip != null) "insightsTip": insightsTip,
+      if (woundStatus != null) 'woundStatus': woundStatus,
+      if (woundImages != null) 'woundImages': woundImages,
+      if (imageTimestamp != null) 'imageTimestamp': imageTimestamp,
+      if (lastSynced != null) 'lastSynced': lastSynced,
+      if (colour != null) 'colour': colour,
+      if (cfu != null) 'cfu': cfu,
+      if (insightsMessage != null) 'insightsMessage': insightsMessage,
+      if (insightsTip != null) 'insightsTip': insightsTip,
     };
   }
 
@@ -103,5 +81,19 @@ class Wound {
       insightsMessage: insightsMessage ?? this.insightsMessage,
       insightsTip: insightsTip ?? this.insightsTip,
     );
+  }
+
+  static Timestamp? _parseTimestamp(dynamic value) {
+    if (value is Timestamp) return value;
+    if (value is int) {
+      return Timestamp.fromMillisecondsSinceEpoch(value);
+    }
+    if (value is String) {
+      final ms = int.tryParse(value);
+      if (ms != null) {
+        return Timestamp.fromMillisecondsSinceEpoch(ms);
+      }
+    }
+    return null;
   }
 }

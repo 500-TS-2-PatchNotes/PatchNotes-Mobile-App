@@ -93,22 +93,17 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                           appUser!.profilePic!.isNotEmpty &&
                           appUser.profilePic! != "local_temp")
                       ? Image.network(
-                          "${appUser.profilePic!}?t=$_profilePicVersion",
+                          appUser.profilePic!,
+                          key: ValueKey(
+                              appUser.profilePic!), // Important for refresh
                           width: 120,
                           height: 120,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
-                              const Icon(
-                            Icons.account_circle,
-                            size: 100,
-                            color: Colors.grey,
-                          ),
+                              const Icon(Icons.account_circle,
+                                  size: 100, color: Colors.grey),
                         )
-                      : const Icon(
-                          Icons.person,
-                          size: 100,
-                          color: Colors.grey,
-                        ),
+                      : const Icon(Icons.person, size: 100, color: Colors.grey),
                 ),
               ),
             ),
@@ -151,8 +146,8 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
             _buildInfoCard(
                 "Device Status", deviceStatus, Icons.bluetooth_connected),
             const SizedBox(height: 5),
-            _buildInfoCard("Wound Status",
-                "Current State: Healthy", Icons.healing),
+            _buildInfoCard(
+                "Wound Status", "Current State: Healthy", Icons.healing),
             const SizedBox(height: 5),
 
             // Medical Notes Section**
