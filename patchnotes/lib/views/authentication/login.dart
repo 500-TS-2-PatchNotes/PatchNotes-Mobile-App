@@ -14,6 +14,7 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  bool skipAutoRedirect = false;
 
   @override
   void dispose() {
@@ -58,7 +59,14 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
             onPressed: () {
               if (adminController.text.trim() == "admin") {
                 Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, "/admin");
+                setState(() {
+                  skipAutoRedirect = true;
+                });
+                Future.microtask(() {
+                  if (mounted) {
+                    Navigator.pushReplacementNamed(context, "/admin");
+                  }
+                });
               } else {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -93,7 +101,9 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
         });
       }
 
-      if (next.firebaseUser != null && previous?.firebaseUser == null) {
+      if (!skipAutoRedirect &&
+          next.firebaseUser != null &&
+          previous?.firebaseUser == null) {
         Navigator.pushReplacementNamed(context, "/home", arguments: 0);
       }
     });

@@ -1,4 +1,6 @@
 PODS:
+  - camera_avfoundation (0.0.1):
+    - Flutter
   - cloud_firestore (5.6.3):
     - Firebase/Firestore (= 11.7.0)
     - firebase_core
@@ -139,6 +141,7 @@ PODS:
   - RecaptchaInterop (100.0.0)
 
 DEPENDENCIES:
+  - camera_avfoundation (from `.symlinks/plugins/camera_avfoundation/ios`)
   - cloud_firestore (from `.symlinks/plugins/cloud_firestore/ios`)
   - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
@@ -179,6 +182,8 @@ SPEC REPOS:
     - RecaptchaInterop
 
 EXTERNAL SOURCES:
+  camera_avfoundation:
+    :path: ".symlinks/plugins/camera_avfoundation/ios"
   cloud_firestore:
     :path: ".symlinks/plugins/cloud_firestore/ios"
   firebase_auth:
@@ -207,6 +212,7 @@ CHECKOUT OPTIONS:
     :tag: 11.7.0
 
 SPEC CHECKSUMS:
+  camera_avfoundation: 04b44aeb14070126c6529e5ab82cc7c9fca107cf
   cloud_firestore: 176d7a2e629c6473b1f99c413e27efe08715e7af
   Firebase: a64bf6a8546e6eab54f1c715cd6151f39d2329f4
   firebase_auth: a1aa0a20e8de111be5b9a5a2ba73201877f9f53d

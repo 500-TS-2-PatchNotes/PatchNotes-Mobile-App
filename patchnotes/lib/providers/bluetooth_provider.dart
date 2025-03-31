@@ -1,27 +1,39 @@
 import 'dart:io';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:patchnotes/bluetooth/ble_uuids.dart';
 
 class AppBluetoothState {
   final bool isScanning;
   final BluetoothDevice? connectedDevice;
   final BluetoothAdapterState adapterState;
+  final BluetoothCharacteristic? userEmailChar;
+  final BluetoothCharacteristic? wifiIdChar;
+  final BluetoothCharacteristic? wifiPasswordChar;
 
   AppBluetoothState({
     this.isScanning = false,
     this.connectedDevice,
     this.adapterState = BluetoothAdapterState.unknown,
+    this.userEmailChar,
+    this.wifiIdChar,
+    this.wifiPasswordChar,
   });
 
-  AppBluetoothState copyWith({
-    bool? isScanning,
-    BluetoothDevice? connectedDevice,
-    BluetoothAdapterState? adapterState,
-  }) {
+  AppBluetoothState copyWith(
+      {bool? isScanning,
+      BluetoothDevice? connectedDevice,
+      BluetoothAdapterState? adapterState,
+      BluetoothCharacteristic? userEmailChar,
+      BluetoothCharacteristic? wifiIdChar,
+      BluetoothCharacteristic? wifiPasswordChar}) {
     return AppBluetoothState(
       isScanning: isScanning ?? this.isScanning,
       connectedDevice: connectedDevice ?? this.connectedDevice,
       adapterState: adapterState ?? this.adapterState,
+      userEmailChar: userEmailChar ?? this.userEmailChar,
+      wifiIdChar: wifiIdChar ?? this.wifiIdChar,
+      wifiPasswordChar: wifiPasswordChar ?? this.wifiPasswordChar,
     );
   }
 }
@@ -83,39 +95,75 @@ class BluetoothNotifier extends StateNotifier<AppBluetoothState> {
   }
 
   Future<bool> connectToDevice(BluetoothDevice device) async {
-    try {
-      await device.connect(timeout: const Duration(seconds: 3));
-      state = state.copyWith(connectedDevice: device);
-      print("Connected to ${device.platformName}");
-      return true;
-    } on FlutterBluePlusException catch (e) {
-      if (e.code == 1) {
-        print("Failed to connect: Timeout");
-      } else if (e.code == 12) {
-        print("Failed to connect: Device is invalid");
+  try {
+    await device.connect(timeout: const Duration(seconds: 3));
+    state = state.copyWith(connectedDevice: device);
+
+    final services = await device.discoverServices();
+    BluetoothCharacteristic? emailChar;
+    BluetoothCharacteristic? wifiIdChar;
+    BluetoothCharacteristic? wifiPassChar;
+
+    for (BluetoothService service in services) {
+      for (BluetoothCharacteristic c in service.characteristics) {
+        final uuid = c.uuid.toString().toLowerCase();
+        if (uuid == userEmailUUID) emailChar = c;
+        if (uuid == wifiIdUUID) wifiIdChar = c;
+        if (uuid == wifiPasswordUUID) wifiPassChar = c;
       }
-      return false;
-    } catch (e) {
-      print("Failed to connect: $e");
-      return false;
     }
+
+    state = state.copyWith(
+      userEmailChar: emailChar,
+      wifiIdChar: wifiIdChar,
+      wifiPasswordChar: wifiPassChar,
+    );
+
+    print("Connected to ${device.platformName} + characteristics discovered");
+    return true;
+  } on FlutterBluePlusException catch (e) {
+    if (e.code == 1) {
+      print("Failed to connect: Timeout");
+    } else if (e.code == 12) {
+      print("Failed to connect: Device is invalid");
+    }
+    return false;
+  } catch (e) {
+    print("Failed to connect: $e");
+    return false;
   }
+}
+
 
   Future<void> disconnectDevice() async {
-  if (state.connectedDevice != null) {
-    try {
-      await state.connectedDevice!.disconnect(); 
-      state = state.copyWith(connectedDevice: null);
-      print("Fully disconnected from device");
-    } catch (e) {
-      print("Failed to disconnect: $e");
+    if (state.connectedDevice != null) {
+      try {
+        await state.connectedDevice!.disconnect();
+        state = state.copyWith(connectedDevice: null);
+        print("Fully disconnected from device");
+      } catch (e) {
+        print("Failed to disconnect: $e");
+      }
     }
+  }
+
+  Future<void> writeStringToCharacteristic(BluetoothCharacteristic? char, String value) async {
+    if (char == null) return;
+    await char.write(value.codeUnits, withoutResponse: false);
+  }
+
+  Future<void> sendWifiCredentials({
+    required String email,
+    required String wifiId,
+    required String wifiPassword,
+  }) async {
+    await writeStringToCharacteristic(state.userEmailChar, email);
+    await writeStringToCharacteristic(state.wifiIdChar, wifiId);
+    await writeStringToCharacteristic(state.wifiPasswordChar, wifiPassword);
   }
 }
 
-
-}
-
-final bluetoothProvider = StateNotifierProvider<BluetoothNotifier, AppBluetoothState>(
+final bluetoothProvider =
+    StateNotifierProvider<BluetoothNotifier, AppBluetoothState>(
   (ref) => BluetoothNotifier(),
 );

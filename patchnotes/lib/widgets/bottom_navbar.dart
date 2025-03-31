@@ -21,9 +21,8 @@ class BottomNavbar extends StatelessWidget {
       items: [
         _buildNavItem(0, Icons.dashboard, 'Dashboard'),
         _buildNavItem(1, Icons.insights, 'Insights'),
-        _buildNavItem(2, Icons.notifications, 'Inbox'),
-        _buildNavItem(3, Icons.person, 'Profile'),
-        _buildNavItem(4, Icons.settings, 'Settings'),
+        _buildNavItem(2, Icons.person, 'Profile'),
+        _buildNavItem(3, Icons.settings, 'Settings'),
       ],
     );
   }

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:patchnotes/providers/navigation.dart';
 import 'package:patchnotes/views/dashboard.dart';
 import 'package:patchnotes/views/insights.dart';
-import 'package:patchnotes/views/notifications.dart';
 import 'package:patchnotes/views/profile.dart';
 import 'package:patchnotes/views/settings.dart';
 import '../widgets/bottom_navbar.dart';
@@ -38,7 +37,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     final List<Widget> pages = [
       const DashboardView(),
       InsightsView(),
-      NotificationsView(),
       const ProfileView(),
       SettingsView(),
     ];

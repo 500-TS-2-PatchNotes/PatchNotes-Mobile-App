@@ -47,5 +47,11 @@
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>This app requires Bluetooth access to connect to nearby devices.</string>
+
+	<key>NSCameraUsageDescription</key>
+	<string>This app requires camera access to take pictures.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app uses the microphone for camera functionality.</string>
+
 </dict>
 </plist>

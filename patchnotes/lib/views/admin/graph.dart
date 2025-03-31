@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:patchnotes/providers/calibration_provider.dart';
 import 'package:patchnotes/models/calibration_level.dart';
@@ -20,48 +20,57 @@ class _GraphPageState extends ConsumerState<GraphPage> {
   String currentState = 'Healthy';
   Color stateColor = Colors.cyan.withOpacity(0.5);
   Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-
-    ref.read(calibrationStreamProvider).whenData((levels) {
-      if (levels.isNotEmpty) {
-        _startGraph(levels);
-      }
-    });
-  }
+  bool _started = false;
 
   void _startGraph(List<CalibrationLevel> levels) {
-  _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-    setState(() {
-      cfuValue = Random().nextDouble() * 1e7;
-      currentState = _getWoundState(cfuValue, levels);
-      stateColor = _getStateBackgroundColor(currentState);
+    if (_started) return;
+    _started = true;
 
-      chartData.add(FlSpot(currentTime, cfuValue));
-      currentTime += 1;
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {
+        final logMin = 0; // log10(1)
+        final logMax = 6; // log10(1e6)
+        final exponent = Random().nextDouble() * (logMax - logMin) + logMin;
+        cfuValue = pow(10, exponent).roundToDouble();
 
-      if (chartData.length > 30) {
-        chartData.removeAt(0);
-      }
+        currentState = _getWoundState(cfuValue, levels);
+        stateColor = _getStateBackgroundColor(currentState);
 
-      for (int i = 0; i < chartData.length; i++) {
-        chartData[i] = FlSpot(i.toDouble(), chartData[i].y);
-      }
+        chartData.add(FlSpot(currentTime, cfuValue));
+        currentTime += 1;
+
+        if (chartData.length > 30) {
+          chartData.removeAt(0);
+        }
+
+        chartData = List.generate(
+          chartData.length,
+          (i) => FlSpot(i.toDouble(), chartData[i].y),
+        );
+      });
     });
-  });
-}
 
+    print('Running _startGraph');
+    for (final level in levels) {
+      print(
+          'Level -> cfu: ${level.cfu}, state: ${level.healthState}, color: ${level.color.value}');
+    }
+  }
 
   String _getWoundState(double growth, List<CalibrationLevel> levels) {
     final sorted = List<CalibrationLevel>.from(levels)
       ..sort((a, b) => a.cfu.compareTo(b.cfu));
 
-    for (var level in sorted) {
-      if (growth <= level.cfu) return level.healthState;
+    String matchedState = sorted.first.healthState;
+    for (final level in sorted) {
+      if (growth >= level.cfu) {
+        matchedState = level.healthState;
+      } else {
+        break;
+      }
     }
-    return sorted.last.healthState;
+    return matchedState;
   }
 
   Color _getStateBackgroundColor(String state) {
@@ -82,6 +91,13 @@ class _GraphPageState extends ConsumerState<GraphPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final calibAsync = ref.watch(calibrationStreamProvider);
+
+    calibAsync.whenData((levels) {
+      if (levels.isNotEmpty) {
+        _startGraph(levels);
+      }
+    });
 
     return Center(
       child: Padding(
@@ -110,24 +126,12 @@ class _GraphPageState extends ConsumerState<GraphPage> {
               width: double.infinity,
               child: LineChart(
                 LineChartData(
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: true,
-                    drawHorizontalLine: true,
-                    getDrawingHorizontalLine: (value) => FlLine(
-                      color: theme.colorScheme.onBackground.withOpacity(0.1),
-                      strokeWidth: 0.5,
-                    ),
-                    getDrawingVerticalLine: (value) => FlLine(
-                      color: theme.colorScheme.onBackground.withOpacity(0.1),
-                      strokeWidth: 0.5,
-                    ),
-                  ),
+                  clipData: FlClipData.all(),
+                  gridData: FlGridData(show: true),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        interval: 1,
                         reservedSize: 50,
                         getTitlesWidget: (value, _) {
                           const values = [
@@ -137,8 +141,7 @@ class _GraphPageState extends ConsumerState<GraphPage> {
                             1e3,
                             1e4,
                             1e5,
-                            1e6,
-                            1e7
+                            1e6
                           ];
                           const labels = [
                             '0',
@@ -147,10 +150,8 @@ class _GraphPageState extends ConsumerState<GraphPage> {
                             '1e+3',
                             '1e+4',
                             '1e+5',
-                            '1e+6',
-                            '1e+7'
+                            '1e+6'
                           ];
-
                           for (int i = 0; i < values.length; i++) {
                             if ((value - values[i]).abs() < 1e-1) {
                               return Text(labels[i]);
@@ -163,7 +164,6 @@ class _GraphPageState extends ConsumerState<GraphPage> {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        interval: 5,
                         reservedSize: 30,
                         getTitlesWidget: (value, _) => Text(
                           '${value.toInt()}s',
@@ -174,17 +174,17 @@ class _GraphPageState extends ConsumerState<GraphPage> {
                         ),
                       ),
                     ),
-                    rightTitles: const AxisTitles(
+                    topTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false),
                     ),
-                    topTitles: const AxisTitles(
+                    rightTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
                   minX: chartData.isNotEmpty ? chartData.first.x : 0,
                   maxX: chartData.isNotEmpty ? chartData.last.x + 30 : 30,
                   minY: 0,
-                  maxY: 1e7, // Max CFU = 10 million
+                  maxY: 1e6,
                   lineBarsData: [
                     LineChartBarData(
                       spots: chartData,

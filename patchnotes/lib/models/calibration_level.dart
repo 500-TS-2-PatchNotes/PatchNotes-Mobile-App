@@ -18,10 +18,12 @@ class CalibrationLevel {
       };
 
   factory CalibrationLevel.fromMap(Map<String, dynamic> data) {
-    return CalibrationLevel(
-      cfu: data['cfu'],
-      color: Color(data['color']),
-      healthState: data['healthState'],
-    );
-  }
+  final rawColor = data['color'];
+  return CalibrationLevel(
+    cfu: (data['cfu'] as num).toDouble(),
+    color: rawColor is int ? Color(rawColor) : const Color(0xFFCCCCCC),
+    healthState: data['healthState'] ?? 'Unknown',
+  );
+}
+
 }

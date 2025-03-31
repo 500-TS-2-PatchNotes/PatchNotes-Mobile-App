@@ -17,19 +17,29 @@ class _ScannerPageState extends ConsumerState<ScannerPage> {
   List<BluetoothDevice> foundDevices = [];
   bool isConnecting = false;
 
+  final emailController = TextEditingController();
+  final wifiIdController = TextEditingController();
+  final wifiPassController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
-    // Start scanning after the widget is built.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startScanning();
     });
   }
 
+  @override
+  void dispose() {
+    emailController.dispose();
+    wifiIdController.dispose();
+    wifiPassController.dispose();
+    super.dispose();
+  }
+
   Future<void> _startScanning() async {
     final bluetoothNotifier = ref.read(bluetoothProvider.notifier);
     try {
-      // Trigger scan; this will update provider's state.
       final devices = await bluetoothNotifier.scanForDevices();
       if (mounted) {
         setState(() {
@@ -54,6 +64,12 @@ class _ScannerPageState extends ConsumerState<ScannerPage> {
         isConnecting = false;
       });
       if (connected) {
+        await bluetoothNotifier.sendWifiCredentials(
+          email: emailController.text.trim(),
+          wifiId: wifiIdController.text.trim(),
+          wifiPassword: wifiPassController.text.trim(),
+        );
+
         widget.onDeviceSelected(device);
         Navigator.pop(context);
       } else {
@@ -80,7 +96,6 @@ class _ScannerPageState extends ConsumerState<ScannerPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Optionally watch the bluetooth state if you need to show adapter state or scanning flag.
     final bluetoothState = ref.watch(bluetoothProvider);
     final isScanning = bluetoothState.isScanning;
 
@@ -93,6 +108,39 @@ class _ScannerPageState extends ConsumerState<ScannerPage> {
               padding: EdgeInsets.all(10),
               child: Text("Scanning...", style: TextStyle(fontSize: 16)),
             ),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Column(
+              children: [
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(
+                    labelText: "User Email",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: wifiIdController,
+                  decoration: const InputDecoration(
+                    labelText: "Wi-Fi Name (SSID)",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: wifiPassController,
+                  decoration: const InputDecoration(
+                    labelText: "Wi-Fi Password",
+                    border: OutlineInputBorder(),
+                  ),
+                  obscureText: true,
+                ),
+              ],
+            ),
+          ),
+
           Expanded(
             child: foundDevices.isEmpty
                 ? const Center(child: Text("No devices found"))
@@ -114,13 +162,13 @@ class _ScannerPageState extends ConsumerState<ScannerPage> {
                     },
                   ),
           ),
+
           Padding(
             padding: const EdgeInsets.all(10),
             child: ElevatedButton(
               onPressed: isScanning ? null : _startScanning,
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    const Color(0xFF5B9BD5).withOpacity(0.8),
+                backgroundColor: const Color(0xFF5B9BD5).withOpacity(0.8),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 20, vertical: 12),

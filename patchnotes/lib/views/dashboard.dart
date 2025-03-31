@@ -1,9 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:patchnotes/providers/bluetooth_provider.dart';
+import 'package:patchnotes/widgets/camera_capture.dart';
 import '../providers/navigation.dart';
 import '../widgets/top_navbar.dart';
 import '../bluetooth/scanner.dart';
+import 'package:camera/camera.dart';
 
 class DashboardView extends ConsumerStatefulWidget {
   const DashboardView({Key? key}) : super(key: key);
@@ -14,6 +18,9 @@ class DashboardView extends ConsumerStatefulWidget {
 
 class _DashboardViewState extends ConsumerState<DashboardView> {
   final String woundStatus = 'Healthy';
+  XFile? _capturedImage;
+  String? _selectedColor;
+  bool _isSending = false;
 
   @override
   Widget build(BuildContext context) {
@@ -28,17 +35,21 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
 
     return Scaffold(
       appBar: const Header(title: "Dashboard"),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          children: [
-            const SizedBox(height: 40),
-            _buildStateIndicator(stateIcon, stateColor, woundStatus),
-            const Spacer(),
-            _buildActionButtons(context, tabIndexNotifier, bluetoothNotifier,
-                isConnected, theme),
-            const SizedBox(height: 30),
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 10),
+              _buildStateIndicator(stateIcon, stateColor, woundStatus),
+              const SizedBox(height: 50),
+              _buildImagePreview(theme),
+              const SizedBox(height: 40),
+              _buildCameraButton(theme),
+              const SizedBox(height: 60),
+            ],
+          ),
         ),
       ),
     );
@@ -58,13 +69,15 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
           child: Text(
             stateText,
             style: TextStyle(
-                fontSize: 20, fontWeight: FontWeight.bold, color: color),
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
         ),
       ],
     );
   }
-
 
   Widget _buildActionButtons(
     BuildContext context,
@@ -123,12 +136,125 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
             );
           }
         },
-        icon: Icon(isConnected ? Icons.bluetooth_disabled : Icons.bluetooth,
-            color: Colors.white),
+        icon: Icon(
+          isConnected ? Icons.bluetooth_disabled : Icons.bluetooth,
+          color: Colors.white,
+        ),
         label: Text(
           isConnected ? "Disconnect" : "Sync Device",
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCameraButton(ThemeData theme) {
+    return Center(
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: theme.colorScheme.secondary,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          elevation: 5,
+        ),
+        onPressed: () async {
+          final image = await Navigator.push<XFile?>(
+            context,
+            MaterialPageRoute(builder: (context) => const CameraCapturePage()),
+          );
+          if (image != null) {
+            setState(() {
+              _capturedImage = image;
+              _selectedColor = null;
+            });
+          }
+        },
+        icon: const Icon(Icons.camera_alt, color: Colors.white),
+        label: const Text(
+          "Take Picture",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePreview(ThemeData theme) {
+    return Column(
+      children: [
+        _capturedImage != null
+            ? Image.file(
+                File(_capturedImage!.path),
+                width: double.infinity,
+                height: 200,
+                fit: BoxFit.cover,
+              )
+            : Container(
+                width: double.infinity,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade400),
+                ),
+                child: const Center(
+                  child: Text(
+                    "No image captured yet",
+                    style: TextStyle(color: Colors.black54),
+                  ),
+                ),
+              ),
+        const SizedBox(height: 10),
+        if (_capturedImage != null) ...[
+          DropdownButtonFormField<String>(
+            decoration: const InputDecoration(
+              labelText: "Select Wound Color (Optional)",
+              filled: true,
+              fillColor: Colors.white70,
+            ),
+            value: _selectedColor,
+            onChanged: (value) => setState(() => _selectedColor = value),
+            items: ['Red', 'Yellow', 'Green']
+                .map((color) =>
+                    DropdownMenuItem(value: color, child: Text(color)))
+                .toList(),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: _isSending ? null : _sendImage,
+                child: _isSending
+                    ? const CircularProgressIndicator()
+                    : const Text("Send"),
+              ),
+              TextButton(
+                onPressed: () => setState(() {
+                  _capturedImage = null;
+                  _selectedColor = null;
+                }),
+                child: const Text("Cancel"),
+              )
+            ],
+          ),
+        ]
+      ],
+    );
+  }
+
+  Future<void> _sendImage() async {
+    setState(() => _isSending = true);
+    await Future.delayed(const Duration(seconds: 2));
+    setState(() {
+      _capturedImage = null;
+      _selectedColor = null;
+      _isSending = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Image sent!"),
+        backgroundColor: Colors.green,
       ),
     );
   }
