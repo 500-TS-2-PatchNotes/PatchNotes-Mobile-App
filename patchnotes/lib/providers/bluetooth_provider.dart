@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -95,45 +96,44 @@ class BluetoothNotifier extends StateNotifier<AppBluetoothState> {
   }
 
   Future<bool> connectToDevice(BluetoothDevice device) async {
-  try {
-    await device.connect(timeout: const Duration(seconds: 3));
-    state = state.copyWith(connectedDevice: device);
+    try {
+      await device.connect(timeout: const Duration(seconds: 3));
+      state = state.copyWith(connectedDevice: device);
 
-    final services = await device.discoverServices();
-    BluetoothCharacteristic? emailChar;
-    BluetoothCharacteristic? wifiIdChar;
-    BluetoothCharacteristic? wifiPassChar;
+      final services = await device.discoverServices();
+      BluetoothCharacteristic? emailChar;
+      BluetoothCharacteristic? wifiIdChar;
+      BluetoothCharacteristic? wifiPassChar;
 
-    for (BluetoothService service in services) {
-      for (BluetoothCharacteristic c in service.characteristics) {
-        final uuid = c.uuid.toString().toLowerCase();
-        if (uuid == userEmailUUID) emailChar = c;
-        if (uuid == wifiIdUUID) wifiIdChar = c;
-        if (uuid == wifiPasswordUUID) wifiPassChar = c;
+      for (BluetoothService service in services) {
+        for (BluetoothCharacteristic c in service.characteristics) {
+          final uuid = c.uuid.toString().toLowerCase();
+          if (uuid == userEmailUUID) emailChar = c;
+          if (uuid == wifiIdUUID) wifiIdChar = c;
+          if (uuid == wifiPasswordUUID) wifiPassChar = c;
+        }
       }
-    }
 
-    state = state.copyWith(
-      userEmailChar: emailChar,
-      wifiIdChar: wifiIdChar,
-      wifiPasswordChar: wifiPassChar,
-    );
+      state = state.copyWith(
+        userEmailChar: emailChar,
+        wifiIdChar: wifiIdChar,
+        wifiPasswordChar: wifiPassChar,
+      );
 
-    print("Connected to ${device.platformName} + characteristics discovered");
-    return true;
-  } on FlutterBluePlusException catch (e) {
-    if (e.code == 1) {
-      print("Failed to connect: Timeout");
-    } else if (e.code == 12) {
-      print("Failed to connect: Device is invalid");
+      print("Connected to ${device.platformName} + characteristics discovered");
+      return true;
+    } on FlutterBluePlusException catch (e) {
+      if (e.code == 1) {
+        print("Failed to connect: Timeout");
+      } else if (e.code == 12) {
+        print("Failed to connect: Device is invalid");
+      }
+      return false;
+    } catch (e) {
+      print("Failed to connect: $e");
+      return false;
     }
-    return false;
-  } catch (e) {
-    print("Failed to connect: $e");
-    return false;
   }
-}
-
 
   Future<void> disconnectDevice() async {
     if (state.connectedDevice != null) {
@@ -147,19 +147,43 @@ class BluetoothNotifier extends StateNotifier<AppBluetoothState> {
     }
   }
 
-  Future<void> writeStringToCharacteristic(BluetoothCharacteristic? char, String value) async {
+  Future<void> writeStringToCharacteristic(
+      BluetoothCharacteristic? char, String value) async {
     if (char == null) return;
     await char.write(value.codeUnits, withoutResponse: false);
   }
 
-  Future<void> sendWifiCredentials({
+  Future<void> sendCredentials({
+    required BluetoothDevice device,
     required String email,
-    required String wifiId,
-    required String wifiPassword,
+    required String ssid,
+    required String password,
+    required String serviceUUID,
   }) async {
-    await writeStringToCharacteristic(state.userEmailChar, email);
-    await writeStringToCharacteristic(state.wifiIdChar, wifiId);
-    await writeStringToCharacteristic(state.wifiPasswordChar, wifiPassword);
+    final services = await device.discoverServices();
+
+    final service = services.firstWhere(
+      (s) => s.uuid.toString().toLowerCase() == serviceUUID.toLowerCase(),
+      orElse: () => throw Exception("Service not found"),
+    );
+
+    Future<void> writeChar(String uuid, String value, String label) async {
+      final characteristic = service.characteristics.firstWhere(
+        (c) => c.uuid.toString().toLowerCase() == uuid.toLowerCase(),
+        orElse: () => throw Exception("Characteristic $uuid not found"),
+      );
+
+      if (characteristic.properties.write) {
+        await characteristic.write(utf8.encode(value), withoutResponse: false);
+        print("✅ Sent $label: $value");
+      } else {
+        throw Exception("Characteristic $uuid does not support writing.");
+      }
+    }
+
+    await writeChar(userEmailUUID, email, "Email");
+    await writeChar(wifiIdUUID, ssid, "SSID");
+    await writeChar(wifiPasswordUUID, password, "Password");
   }
 }
 

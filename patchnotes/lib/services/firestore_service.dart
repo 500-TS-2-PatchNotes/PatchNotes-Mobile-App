@@ -67,15 +67,89 @@ class FirestoreService {
     await _updateDocument(getWoundDoc(uid), woundData);
   }
 
+  Future<void> updateWoundImagesFromLatest(String uid) async {
+    try {
+      final woundDataRef =
+          _db.collection('users').doc(uid).collection('wound_data');
+
+      // Get latest image doc (excluding 'info')
+      final snapshot = await woundDataRef
+          .where(FieldPath.documentId, isNotEqualTo: 'info')
+          .orderBy('analyze_time', descending: true)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) return;
+
+      final latestUrl = snapshot.docs.first.data()['URL'] as String?;
+
+      if (latestUrl == null) return;
+
+      // Get current woundImages
+      final infoRef = getWoundDoc(uid);
+      final infoSnap = await infoRef.get();
+      final data = infoSnap.data() as Map<String, dynamic>? ?? {};
+      final currentImages = List<String>.from(data['woundImages'] ?? []);
+
+      // Treat as a queue: prepend and trim to 9
+      final updated = [latestUrl, ...currentImages].take(9).toList();
+
+      await infoRef.update({'woundImages': updated});
+    } catch (e) {
+      print("Failed to update woundImages from latest: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> updateCurrentLvlFromLatest(String uid) async {
+    final woundDataRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('wound_data');
+
+    // Step 1: Get the 9 most recent wound documents (excluding 'info')
+    final snapshot = await woundDataRef
+        .where(FieldPath.documentId, isNotEqualTo: 'info')
+        .orderBy('imageTimestamp', descending: true)
+        .limit(9)
+        .get();
+
+    if (snapshot.docs.isEmpty) return;
+
+    // Step 2: Extract levels from the latest docs
+    final levels = snapshot.docs
+        .map((doc) => doc.data()['level'])
+        .where((level) => level != null)
+        .cast<int>()
+        .toList();
+
+    final latestLevel = levels.first;
+
+    // Step 3: Update the info doc
+    final infoRef = woundDataRef.doc('info');
+    await infoRef.set({
+      'currentLvl': latestLevel,
+      'recentLevels': levels,
+      'lastSynced': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+  }
+
   /// DELETE
   Future<void> deleteAllUserData(String uid) async {
     try {
+      final userDocRef = getUserDoc(uid);
+      final woundDataRef = userDocRef.collection('wound_data');
+
+      final woundDataSnapshot = await woundDataRef.get();
+      for (final doc in woundDataSnapshot.docs) {
+        await doc.reference.delete();
+      }
+
       await getAccountDoc(uid).delete();
-      await getWoundDoc(uid).delete();
-      await getUserDoc(uid).delete();
-      print("Deleted all Firestore documents for user $uid.");
+
+      await userDocRef.delete();
     } catch (e) {
-      print("Error deleting user data: $e");
       rethrow;
     }
   }

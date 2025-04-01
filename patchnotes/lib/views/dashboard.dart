@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:patchnotes/bluetooth/ble_uuids.dart';
 import 'package:patchnotes/models/calibration_level.dart';
 import 'package:patchnotes/providers/auth_provider.dart';
 import 'package:patchnotes/providers/bluetooth_provider.dart';
@@ -26,6 +29,18 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   XFile? _capturedImage;
   String? _selectedColor;
   bool _isSending = false;
+  bool _showOverlay = false;
+  BluetoothDevice? _overlayDevice;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      if (mounted) {
+        ref.read(userProvider.notifier).loadUserData();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +48,6 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     final bluetoothState = ref.watch(bluetoothProvider);
     final bluetoothNotifier = ref.read(bluetoothProvider.notifier);
     final theme = Theme.of(context);
-    final isConnected = bluetoothState.connectedDevice != null;
 
     final wound = ref.watch(userProvider).wound;
     final cfu = wound?.cfu ?? 0.0;
@@ -43,120 +57,62 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     final stateColor = _getStateColor(woundState);
     final stateIcon = _getStateIcon(woundState);
 
-    return Scaffold(
-      appBar: const Header(title: "Dashboard"),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 10),
-              _buildStateIndicator(stateIcon, stateColor, woundState),
-              const SizedBox(height: 50),
-              _buildImagePreview(theme),
-              const SizedBox(height: 40),
-              _buildCameraButton(theme),
-              const SizedBox(height: 60),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStateIndicator(IconData icon, Color color, String stateText) {
-    return Column(
+    return Stack(
       children: [
-        Icon(icon, size: 60, color: color),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            stateText,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
+        Scaffold(
+          appBar: const Header(title: "Dashboard"),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 10),
+                  _buildStateIndicator(stateIcon, stateColor, woundState),
+                  const SizedBox(height: 50),
+                  _buildImagePreview(theme),
+                  const SizedBox(height: 40),
+                  Column(
+                    children: [
+                      _buildCameraButton(theme),
+                      const SizedBox(height: 20),
+                      _buildSyncDevice(
+                        context,
+                        tabIndexNotifier,
+                        bluetoothNotifier,
+                        bluetoothState.connectedDevice != null,
+                        theme,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 60),
+                ],
+              ),
             ),
           ),
         ),
+        if (_showOverlay)
+          Positioned.fill(
+            child: Stack(
+              children: [
+                BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 4.0, sigmaY: 4.0),
+                  child: Container(
+                    color: Colors.transparent, // allow blur to work
+                  ),
+                ),
+                Container(
+                  color: Colors.black.withOpacity(0.3), // dim background
+                ),
+                Center(child: _buildOverlayCard(context)), // show overlay card
+              ],
+            ),
+          ),
       ],
     );
   }
 
-  Widget _buildActionButtons(
-    BuildContext context,
-    StateController<int> tabIndexNotifier,
-    BluetoothNotifier bluetoothNotifier,
-    bool isConnected,
-    ThemeData theme,
-  ) {
-    return Center(
-      child: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isConnected ? Colors.red : theme.primaryColor,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          elevation: 5,
-        ),
-        onPressed: () async {
-          if (!isConnected) {
-            final selectedDevice = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ScannerPage(
-                  onDeviceSelected: (device) async {
-                    if (device != null) {
-                      bool success =
-                          await bluetoothNotifier.connectToDevice(device);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            success
-                                ? "Device connected successfully!"
-                                : "Failed to connect device.",
-                            textAlign: TextAlign.center,
-                          ),
-                          backgroundColor: success ? Colors.green : Colors.red,
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              ),
-            );
-            if (selectedDevice != null) ref.refresh(bluetoothProvider);
-          } else {
-            await bluetoothNotifier.disconnectDevice();
-            ref.refresh(bluetoothProvider);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content:
-                    Text("Device disconnected.", textAlign: TextAlign.center),
-                backgroundColor: Colors.red,
-                duration: Duration(seconds: 2),
-              ),
-            );
-          }
-        },
-        icon: Icon(
-          isConnected ? Icons.bluetooth_disabled : Icons.bluetooth,
-          color: Colors.white,
-        ),
-        label: Text(
-          isConnected ? "Disconnect" : "Sync Device",
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-      ),
-    );
-  }
+ 
 
   Widget _buildCameraButton(ThemeData theme) {
     return Center(
@@ -189,6 +145,174 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     );
   }
 
+  Widget _buildSyncDevice(
+    BuildContext context,
+    StateController<int> tabIndexNotifier,
+    BluetoothNotifier bluetoothNotifier,
+    bool isConnected,
+    ThemeData theme,
+  ) {
+    return Center(
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isConnected ? Colors.red : theme.primaryColor,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          elevation: 5,
+        ),
+        onPressed: () async {
+          if (!isConnected) {
+            final selectedDevice = await Navigator.push<BluetoothDevice?>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ScannerPage(
+                  onDeviceSelected: (device) {
+                    Navigator.pop(context, device);
+                  },
+                ),
+              ),
+            );
+
+            if (selectedDevice != null && mounted) {
+              final success =
+                  await bluetoothNotifier.connectToDevice(selectedDevice);
+
+              if (!mounted) return;
+
+              if (success) {
+                setState(() {
+                  _overlayDevice = selectedDevice;
+                  _showOverlay = true;
+                });
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "Device connected successfully!",
+                      textAlign: TextAlign.center,
+                    ),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "Failed to connect device.",
+                      textAlign: TextAlign.center,
+                    ),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          } else {
+            await bluetoothNotifier.disconnectDevice();
+            ref.refresh(bluetoothProvider);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content:
+                      Text("Device disconnected.", textAlign: TextAlign.center),
+                  backgroundColor: Colors.red,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          }
+        },
+        icon: Icon(
+          isConnected ? Icons.bluetooth_disabled : Icons.bluetooth,
+          color: Colors.white,
+        ),
+        label: Text(
+          isConnected ? "Disconnect" : "Sync Device",
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOverlayCard(BuildContext context) {
+    final ssidController = TextEditingController();
+    final passwordController = TextEditingController();
+
+    return Center(
+      child: Material(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 300),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Enter Wi-Fi Credentials',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: ssidController,
+                  decoration: const InputDecoration(labelText: 'Wi-Fi SSID'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration:
+                      const InputDecoration(labelText: 'Wi-Fi Password'),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    final ssid = ssidController.text.trim();
+                    final password = passwordController.text.trim();
+
+                    if (!mounted || _overlayDevice == null) return;
+
+                    final user = ref.read(authProvider).firebaseUser;
+                    final email = user?.email ?? "unknown@patchnotes.dev";
+
+                    final bluetoothNotifier =
+                        ref.read(bluetoothProvider.notifier);
+                    try {
+                      await bluetoothNotifier.sendCredentials(
+                        device: _overlayDevice!,
+                        email: email,
+                        ssid: ssid,
+                        password: password,
+                        serviceUUID: serviceUID,
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text("Failed to send credentials: $e")),
+                      );
+                    }
+
+                    if (mounted) {
+                      setState(() {
+                        _showOverlay = false;
+                        _overlayDevice = null;
+                      });
+                    }
+                  },
+                  child: const Text('Send Credentials'),
+                ),
+                TextButton(
+                  onPressed: () => setState(() => _showOverlay = false),
+                  child: const Text('Cancel'),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildImagePreview(ThemeData theme) {
     return Column(
       children: [
@@ -216,19 +340,6 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
               ),
         const SizedBox(height: 10),
         if (_capturedImage != null) ...[
-          DropdownButtonFormField<String>(
-            decoration: const InputDecoration(
-              labelText: "Select Wound Color (Optional)",
-              filled: true,
-              fillColor: Colors.white70,
-            ),
-            value: _selectedColor,
-            onChanged: (value) => setState(() => _selectedColor = value),
-            items: ['Blue', 'Yellow', 'Green']
-                .map((color) =>
-                    DropdownMenuItem(value: color, child: Text(color)))
-                .toList(),
-          ),
           const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -263,28 +374,35 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     final user = ref.read(authProvider).firebaseUser;
     final uid = user?.uid;
 
+    final timestamp = DateTime.now();
+    final formattedName =
+        "${timestamp.toIso8601String().split('.').first.replaceAll(':', '-').replaceAll('T', '_')}.jpg";
+
     if (uid == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
             content: Text("User not authenticated."),
-            backgroundColor: Colors.red),
-      );
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+
       setState(() => _isSending = false);
       return;
     }
 
     try {
       final fileBytes = await File(_capturedImage!.path).readAsBytes();
-      final imageUrl = await storageService.uploadWoundImage(uid, fileBytes);
+      final imageUrl = await storageService.uploadWoundImage(uid, fileBytes,
+          fileName: formattedName);
 
       if (imageUrl != null) {
         await firestoreService.addWoundImage(uid, imageUrl);
 
         double? finalCfu;
         String finalState = 'Unknown';
-        String? selectedColorHex;
 
-        // Map selected color to calibration data
         if (_selectedColor != null) {
           final mapping = {
             'Blue': Color(0xFF016BC8),
@@ -294,7 +412,6 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
 
           final colorCode = mapping[_selectedColor!];
 
-          // Find the matching calibration level
           final match = calibrationLevels.firstWhere(
             (level) => level.color == colorCode,
             orElse: () => calibrationLevels.first,
@@ -302,10 +419,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
 
           finalCfu = match.cfu;
           finalState = match.healthState;
-          selectedColorHex =
-              '#${match.color.value.toRadixString(16).substring(2).toUpperCase()}';
         } else {
-          // Simulate a predicted value
           final predictedLevel = 1.0 + (DateTime.now().second % 6);
           finalCfu = predictedLevel;
           finalState =
@@ -334,18 +448,23 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
           'lastSynced': Timestamp.now(),
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
               content: Text("Image and wound status updated!"),
-              backgroundColor: Colors.green),
-        );
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       } else {
         throw Exception("Image upload failed.");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        );
+      }
     } finally {
       setState(() {
         _capturedImage = null;
@@ -355,28 +474,36 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     }
   }
 
-  Color _getStateColor(String state) {
-    switch (state) {
-      case 'Healthy':
-        return Colors.green;
-      case 'Unhealthy':
-        return Colors.red;
-      case 'Monitor Needed':
-      default:
-        return Colors.amber;
-    }
+  Widget _buildStateIndicator(IconData icon, Color color, String stateText) {
+    return Column(
+      children: [
+        Icon(icon, size: 60, color: color),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            stateText,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
-  IconData _getStateIcon(String state) {
-    switch (state) {
-      case 'Healthy':
-        return Icons.check_circle;
-      case 'Unhealthy':
-        return Icons.error;
-      case 'Monitor Needed':
-      default:
-        return Icons.info;
+  String _getWoundStateFromLevel(List<CalibrationLevel> levels, double level) {
+    if (levels.isEmpty) return 'Unknown';
+    for (int i = 0; i < levels.length; i++) {
+      if (level <= levels[i].cfu) return levels[i].healthState;
     }
+    return levels.last.healthState;
   }
 
   String _getStatusMessage(String state) {
@@ -405,11 +532,27 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     }
   }
 
-  String _getWoundStateFromLevel(List<CalibrationLevel> levels, double level) {
-    if (levels.isEmpty) return 'Unknown'; // <-- handle empty levels safely
-    for (int i = 0; i < levels.length; i++) {
-      if (level <= levels[i].cfu) return levels[i].healthState;
+  Color _getStateColor(String state) {
+    switch (state) {
+      case 'Healthy':
+        return Colors.green;
+      case 'Unhealthy':
+        return Colors.red;
+      case 'Monitor Needed':
+      default:
+        return Colors.amber;
     }
-    return levels.last.healthState;
+  }
+
+  IconData _getStateIcon(String state) {
+    switch (state) {
+      case 'Healthy':
+        return Icons.check_circle;
+      case 'Unhealthy':
+        return Icons.error;
+      case 'Monitor Needed':
+      default:
+        return Icons.info;
+    }
   }
 }

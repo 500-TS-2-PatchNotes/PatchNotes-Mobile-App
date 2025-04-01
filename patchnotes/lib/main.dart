@@ -8,6 +8,7 @@ import 'package:patchnotes/providers/user_provider.dart';
 import 'package:patchnotes/views/admin/admin.dart';
 import 'package:patchnotes/views/authentication/login.dart';
 import 'package:patchnotes/views/authentication/register.dart';
+import 'package:patchnotes/views/dashboard.dart';
 import 'package:patchnotes/views/mainscreen.dart';
 import 'utils/firebase_options.dart';
 
@@ -53,6 +54,7 @@ class MyApp extends ConsumerWidget {
         "/login": (context) => const LoginPageMobile(),
         "/register": (context) => const RegisterPageMobile(),
         "/home": (context) => const MainScreen(),
+        "/dashboard": (context) => const DashboardView(),
         "/admin": (context) => AdminDashboard()
       },
       onUnknownRoute: (settings) => MaterialPageRoute(

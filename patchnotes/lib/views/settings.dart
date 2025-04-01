@@ -188,111 +188,108 @@ class SettingsView extends ConsumerWidget {
 
   /// Confirms Delete Account
   void _confirmDeleteAccount(BuildContext context, WidgetRef ref,
-      AuthNotifier authNotifier, String email) {
-    TextEditingController passwordController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: const [
-            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
-            SizedBox(width: 10),
-            Text("Delete Account",
-                style: TextStyle(fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "This action cannot be undone. Please enter your password to confirm account deletion.",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: "Password",
-                prefixIcon: const Icon(Icons.lock, color: Colors.red),
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Colors.red),
-                  borderRadius: BorderRadius.circular(12),
-                ),
+    AuthNotifier authNotifier, String email) {
+  TextEditingController passwordController = TextEditingController();
+  final scaffoldMessenger = ScaffoldMessenger.of(context); 
+  showDialog(
+    context: context,
+    builder: (BuildContext dialogContext) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: const [
+          Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+          SizedBox(width: 10),
+          Text("Delete Account",
+              style: TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            "This action cannot be undone. Please enter your password to confirm account deletion.",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: passwordController,
+            obscureText: true,
+            decoration: InputDecoration(
+              labelText: "Password",
+              prefixIcon: const Icon(Icons.lock, color: Colors.red),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              focusedBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Colors.red),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.black87,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              textStyle: const TextStyle(fontSize: 16),
-            ),
-            onPressed: () {
-              passwordController.clear();
-              Navigator.pop(dialogContext);
-            },
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () async {
-              String password = passwordController.text.trim();
-              if (password.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text("Please enter your password."),
-                      backgroundColor: Colors.red),
-                );
-                return;
-              }
-
-              try {
-                // Ensure password is correct before proceeding
-                await authNotifier.reauthenticateUser(password);
-
-                // Get user ID and delete Firestore user data
-                final userId = authNotifier.state.firebaseUser?.uid;
-                if (userId != null) {
-                  await ref.read(userProvider.notifier).deleteUserData(userId);
-                }
-
-                // Delete the Firebase account
-                await authNotifier.reauthenticateAndDelete(email, password);
-
-                ref.invalidate(authProvider);
-                ref.invalidate(settingsProvider);
-                ref.invalidate(userProvider);
-
-                // Close dialog and navigate to login
-                Navigator.pop(dialogContext);
-                Navigator.pushNamedAndRemoveUntil(
-                    context, "/login", (route) => false);
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text("Error: $e"), backgroundColor: Colors.red),
-                );
-              }
-            },
-            child: const Text("Delete", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
-    );
-  }
+      actions: [
+        TextButton(
+          onPressed: () {
+            passwordController.clear();
+            Navigator.pop(dialogContext);
+          },
+          child: const Text("Cancel"),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10)),
+          ),
+          onPressed: () async {
+            final password = passwordController.text.trim();
+            if (password.isEmpty) {
+              scaffoldMessenger.showSnackBar( 
+                const SnackBar(
+                    content: Text("Please enter your password."),
+                    backgroundColor: Colors.red),
+              );
+              return;
+            }
+
+            try {
+              await authNotifier.reauthenticateUser(password);
+              final userId = authNotifier.state.firebaseUser?.uid;
+
+              if (userId != null) {
+                await ref.read(userProvider.notifier).deleteUserData(userId);
+              }
+
+              await authNotifier.reauthenticateAndDelete(email, password);
+
+              ref.invalidate(authProvider);
+              ref.invalidate(settingsProvider);
+              ref.invalidate(userProvider);
+
+              if (context.mounted) {
+                Navigator.pop(dialogContext);
+                Navigator.pushNamedAndRemoveUntil(
+                    context, "/login", (route) => false);
+              }
+            } catch (e) {
+              if (context.mounted) {
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(
+                      content: Text("Error: $e"),
+                      backgroundColor: Colors.red),
+                );
+              }
+            }
+          },
+          child: const Text("Delete", style: TextStyle(color: Colors.white)),
+        ),
+      ],
+    ),
+  );
+}
+
 
   void _changeEmail(
       BuildContext context, AuthNotifier authNotifier, WidgetRef ref) {

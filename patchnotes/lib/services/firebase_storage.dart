@@ -39,21 +39,21 @@ class FirebaseStorageService {
   }
 
   /// Uploads a wound image for a user and returns its public URL.
-  Future<String?> uploadWoundImage(String uid, Uint8List imageBytes) async {
-    try {
-      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      final filePath = 'images/$uid/$timestamp.jpg';
-      final ref = _storage.ref().child(filePath);
+Future<String?> uploadWoundImage(String uid, Uint8List imageBytes, {String? fileName}) async {
+  try {
+    final name = fileName ?? "${DateTime.now().millisecondsSinceEpoch}.jpg";
+    final filePath = 'images/$uid/$name';
+    final ref = _storage.ref().child(filePath);
 
-      final metadata = SettableMetadata(contentType: 'image/jpeg');
-      final snapshot = await ref.putData(imageBytes, metadata);
+    final metadata = SettableMetadata(contentType: 'image/jpeg');
+    final snapshot = await ref.putData(imageBytes, metadata);
 
-      return await snapshot.ref.getDownloadURL();
-    } catch (e) {
-      print('Error uploading wound image: $e');
-      return null;
-    }
+    return await snapshot.ref.getDownloadURL();
+  } catch (e) {
+    print('Error uploading wound image: $e');
+    return null;
   }
+}
 
   /// Deletes a specific wound image using its download URL.
   Future<void> deleteWoundImage(String imageUrl) async {

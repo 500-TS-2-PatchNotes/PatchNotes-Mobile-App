@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import "ble_uuids.dart";
 
 class BluetoothManager {
   bool _isScanning = false;
@@ -7,7 +9,8 @@ class BluetoothManager {
 
   bool get isScanning => _isScanning;
   BluetoothDevice? get connectedDevice => _connectedDevice;
-  Stream<BluetoothAdapterState> get adapterStateStream => FlutterBluePlus.adapterState;
+  Stream<BluetoothAdapterState> get adapterStateStream =>
+      FlutterBluePlus.adapterState;
 
   Future<void> setupBluetooth() async {
     if (!(await FlutterBluePlus.isSupported)) return;
@@ -74,15 +77,14 @@ class BluetoothManager {
   }
 
   Future<void> disconnectDevice() async {
-  if (_connectedDevice != null) {
-    try {
-      await _connectedDevice!.disconnect();
-      _connectedDevice = null;
-      print("Fully disconnected from device");
-    } catch (e) {
-      print("Failed to disconnect: $e");
+    if (_connectedDevice != null) {
+      try {
+        await _connectedDevice!.disconnect();
+        _connectedDevice = null;
+        print("Fully disconnected from device");
+      } catch (e) {
+        print("Failed to disconnect: $e");
+      }
     }
   }
-}
-
 }

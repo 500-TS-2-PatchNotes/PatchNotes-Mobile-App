@@ -95,7 +95,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                       ? Image.network(
                           appUser.profilePic!,
                           key: ValueKey(
-                              appUser.profilePic!), // Important for refresh
+                              appUser.profilePic!), 
                           width: 120,
                           height: 120,
                           fit: BoxFit.cover,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:patchnotes/bluetooth/ble_uuids.dart';
 import 'package:patchnotes/providers/bluetooth_provider.dart';
 
 class ScannerPage extends ConsumerStatefulWidget {
@@ -51,49 +52,6 @@ class _ScannerPageState extends ConsumerState<ScannerPage> {
     }
   }
 
-  Future<void> _connectToDevice(BluetoothDevice device) async {
-    final bluetoothNotifier = ref.read(bluetoothProvider.notifier);
-    if (isConnecting) return;
-    setState(() {
-      isConnecting = true;
-    });
-    try {
-      bool connected = await bluetoothNotifier.connectToDevice(device);
-      if (!mounted) return;
-      setState(() {
-        isConnecting = false;
-      });
-      if (connected) {
-        await bluetoothNotifier.sendWifiCredentials(
-          email: emailController.text.trim(),
-          wifiId: wifiIdController.text.trim(),
-          wifiPassword: wifiPassController.text.trim(),
-        );
-
-        widget.onDeviceSelected(device);
-        Navigator.pop(context);
-      } else {
-        widget.onDeviceSelected(null);
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text("Connection timed out. Please try again.")),
-        );
-      }
-    } catch (e) {
-      print("Failed to connect: $e");
-      if (mounted) {
-        setState(() {
-          isConnecting = false;
-        });
-        widget.onDeviceSelected(null);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Connection failed: $e")),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final bluetoothState = ref.watch(bluetoothProvider);
@@ -108,39 +66,6 @@ class _ScannerPageState extends ConsumerState<ScannerPage> {
               padding: EdgeInsets.all(10),
               child: Text("Scanning...", style: TextStyle(fontSize: 16)),
             ),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Column(
-              children: [
-                TextField(
-                  controller: emailController,
-                  decoration: const InputDecoration(
-                    labelText: "User Email",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: wifiIdController,
-                  decoration: const InputDecoration(
-                    labelText: "Wi-Fi Name (SSID)",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: wifiPassController,
-                  decoration: const InputDecoration(
-                    labelText: "Wi-Fi Password",
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                ),
-              ],
-            ),
-          ),
-
           Expanded(
             child: foundDevices.isEmpty
                 ? const Center(child: Text("No devices found"))
@@ -155,14 +80,13 @@ class _ScannerPageState extends ConsumerState<ScannerPage> {
                               : "Unknown Device",
                         ),
                         subtitle: Text(device.remoteId.toString()),
-                        onTap: isConnecting
-                            ? null
-                            : () => _connectToDevice(device),
+                        onTap: () {
+                          Navigator.pop(context, device);
+                        },
                       );
                     },
                   ),
           ),
-
           Padding(
             padding: const EdgeInsets.all(10),
             child: ElevatedButton(
@@ -170,8 +94,8 @@ class _ScannerPageState extends ConsumerState<ScannerPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF5B9BD5).withOpacity(0.8),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -192,8 +116,7 @@ class _ScannerPageState extends ConsumerState<ScannerPage> {
                   const SizedBox(width: 8),
                   const Text(
                     "Refresh Scan",
-                    style: TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),

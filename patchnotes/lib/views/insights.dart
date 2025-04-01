@@ -1,17 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:patchnotes/providers/navigation.dart';
 import 'package:patchnotes/providers/user_provider.dart';
 import '../widgets/top_navbar.dart';
 
-class InsightsView extends ConsumerWidget {
+class InsightsView extends ConsumerStatefulWidget {
   const InsightsView({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
+  _InsightsViewState createState() => _InsightsViewState();
+}
+
+class _InsightsViewState extends ConsumerState<InsightsView> {
+  bool _hasFetched = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final currentTab = ref.watch(tabIndexProvider);
+
+    if (currentTab == 1 && !_hasFetched) {
+      _hasFetched = true;
+      Future.microtask(() {
+        ref.read(userProvider.notifier).loadUserData();
+      });
+    } else if (currentTab != 1) {
+      _hasFetched = false;
+    }
+
     final userState = ref.watch(userProvider);
     final wound = userState.wound;
-
     final images = wound?.woundImages ?? [];
     final woundStatus = wound?.woundStatus ?? 'Unknown';
     final woundTip = wound?.insightsTip ?? 'No tip available.';
@@ -26,16 +43,17 @@ class InsightsView extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildStatusContainer(statusMessage, woundStatus, theme),
+                _buildStatusContainer(
+                    statusMessage, woundStatus, Theme.of(context)),
                 const SizedBox(height: 20),
-                _buildSectionTitle('Most Recent Wound Images', theme),
+                _buildSectionTitle(
+                    'Most Recent Wound Images', Theme.of(context)),
                 const SizedBox(height: 20),
-                _buildImageGrid(theme, images),
+                _buildImageGrid(Theme.of(context), images),
                 const SizedBox(height: 24),
-                _buildTipContainer(woundTip, theme),
+                _buildTipContainer(woundTip, Theme.of(context)),
                 const SizedBox(height: 24),
-                _buildLastSyncedInfo(theme),
-                const SizedBox(height: 24),
+                _buildLastSyncedInfo(Theme.of(context)),
               ],
             ),
           ),
