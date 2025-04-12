@@ -7,6 +7,8 @@ class Wound {
   Timestamp? lastSynced;
   String? colour;
   double? cfu;
+  double? currentLvl;             
+  List<double>? recentLevels;     
   String? insightsMessage;
   String? insightsTip;
 
@@ -17,6 +19,8 @@ class Wound {
     this.lastSynced,
     this.colour,
     this.cfu,
+    this.currentLvl,            
+    this.recentLevels,           
     this.insightsMessage = "Status: No data available yet. Please take a wound image to receive insights.",
     this.insightsTip = "Tip: Capture a clear image or select a wound color to begin analysis.",
   });
@@ -33,6 +37,10 @@ class Wound {
       lastSynced: _parseTimestamp(data['lastSynced']),
       colour: data['colour'] ?? "",
       cfu: (data['cfu'] is num) ? (data['cfu'] as num).toDouble() : 0.0,
+      currentLvl: (data['currentLvl'] is num) ? (data['currentLvl'] as num).toDouble() : null,
+      recentLevels: data['recentLevels'] != null
+          ? List<double>.from((data['recentLevels'] as List).map((e) => (e as num).toDouble()))
+          : [],
       insightsMessage: data['insightsMessage'] ??
           "Status: No data available yet. Please take a wound image to receive insights.",
       insightsTip: data['insightsTip'] ??
@@ -56,6 +64,8 @@ class Wound {
       if (lastSynced != null) 'lastSynced': lastSynced,
       if (colour != null) 'colour': colour,
       if (cfu != null) 'cfu': cfu,
+      if (currentLvl != null) 'currentLvl': currentLvl,          
+      if (recentLevels != null) 'recentLevels': recentLevels,    
       if (insightsMessage != null) 'insightsMessage': insightsMessage,
       if (insightsTip != null) 'insightsTip': insightsTip,
     };
@@ -68,6 +78,8 @@ class Wound {
     Timestamp? lastSynced,
     String? colour,
     double? cfu,
+    double? currentLvl,             
+    List<double>? recentLevels,    
     String? insightsMessage,
     String? insightsTip,
   }) {
@@ -78,6 +90,8 @@ class Wound {
       lastSynced: lastSynced ?? this.lastSynced,
       colour: colour ?? this.colour,
       cfu: cfu ?? this.cfu,
+      currentLvl: currentLvl ?? this.currentLvl,
+      recentLevels: recentLevels ?? this.recentLevels,
       insightsMessage: insightsMessage ?? this.insightsMessage,
       insightsTip: insightsTip ?? this.insightsTip,
     );

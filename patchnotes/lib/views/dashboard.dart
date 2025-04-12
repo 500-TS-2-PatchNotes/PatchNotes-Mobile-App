@@ -6,11 +6,11 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:patchnotes/bluetooth/ble_uuids.dart';
-import 'package:patchnotes/models/calibration_level.dart';
 import 'package:patchnotes/providers/auth_provider.dart';
 import 'package:patchnotes/providers/bluetooth_provider.dart';
 import 'package:patchnotes/providers/calibration_provider.dart';
 import 'package:patchnotes/providers/user_provider.dart';
+import 'package:patchnotes/utils/insights_helper.dart';
 import 'package:patchnotes/widgets/camera_capture.dart';
 import '../providers/navigation.dart';
 import '../widgets/top_navbar.dart';
@@ -50,10 +50,12 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     final theme = Theme.of(context);
 
     final wound = ref.watch(userProvider).wound;
-    final cfu = wound?.cfu ?? 0.0;
+    final level = wound?.currentLvl ?? 0.0;
     final calibrationLevels = ref.watch(calibrationStreamProvider).value ?? [];
 
-    final woundState = _getWoundStateFromLevel(calibrationLevels, cfu);
+    final cfu = estimateCFUFromLevel(calibrationLevels, level);
+
+    final woundState = getWoundStateFromCFU(calibrationLevels, cfu);
     final stateColor = _getStateColor(woundState);
     final stateIcon = _getStateIcon(woundState);
 
@@ -111,8 +113,6 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       ],
     );
   }
-
- 
 
   Widget _buildCameraButton(ThemeData theme) {
     return Center(
@@ -370,13 +370,8 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
 
     final storageService = ref.read(firebaseStorageServiceProvider);
     final firestoreService = ref.read(firestoreServiceProvider);
-    final calibrationLevels = ref.read(calibrationStreamProvider).value ?? [];
     final user = ref.read(authProvider).firebaseUser;
     final uid = user?.uid;
-
-    final timestamp = DateTime.now();
-    final formattedName =
-        "${timestamp.toIso8601String().split('.').first.replaceAll(':', '-').replaceAll('T', '_')}.jpg";
 
     if (uid == null) {
       if (mounted) {
@@ -387,77 +382,46 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
           ),
         );
       }
-
       setState(() => _isSending = false);
       return;
     }
 
     try {
+      final timestamp = DateTime.now();
+      final formattedName =
+          "${timestamp.toIso8601String().split('.').first.replaceAll(':', '-').replaceAll('T', '_')}.jpg";
+
       final fileBytes = await File(_capturedImage!.path).readAsBytes();
-      final imageUrl = await storageService.uploadWoundImage(uid, fileBytes,
-          fileName: formattedName);
+      final imageUrl = await storageService.uploadWoundImage(
+        uid,
+        fileBytes,
+        fileName: formattedName,
+      );
 
-      if (imageUrl != null) {
-        await firestoreService.addWoundImage(uid, imageUrl);
+      if (imageUrl == null) throw Exception("Image upload failed.");
+      await firestoreService.addWoundImage(uid, imageUrl);
 
-        double? finalCfu;
-        String finalState = 'Unknown';
+      final infoDocRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('wound_data')
+          .doc('info');
 
-        if (_selectedColor != null) {
-          final mapping = {
-            'Blue': Color(0xFF016BC8),
-            'Green': Color(0xFF91A55E),
-            'Yellow': Color(0xFFF1BB00),
-          };
+      await infoDocRef.set({
+        'woundImages': FieldValue.arrayUnion([imageUrl]),
+        'imageTimestamp': Timestamp.now(),
+        'lastSynced': Timestamp.now(),
+        'insightsMessage': 'Status: Awaiting analysis...',
+        'insightsTip': 'Tip: Please wait while the image is analyzed.',
+      }, SetOptions(merge: true));
 
-          final colorCode = mapping[_selectedColor!];
-
-          final match = calibrationLevels.firstWhere(
-            (level) => level.color == colorCode,
-            orElse: () => calibrationLevels.first,
-          );
-
-          finalCfu = match.cfu;
-          finalState = match.healthState;
-        } else {
-          final predictedLevel = 1.0 + (DateTime.now().second % 6);
-          finalCfu = predictedLevel;
-          finalState =
-              _getWoundStateFromLevel(calibrationLevels, predictedLevel);
-        }
-
-        final String message = _getStatusMessage(finalState);
-        final String tip = _getTip(finalState);
-
-        final infoDocRef = FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid)
-            .collection('wound_data')
-            .doc('info');
-
-        await infoDocRef.update({
-          'woundImages': FieldValue.arrayUnion([imageUrl]),
-          'cfu': finalCfu,
-          'woundStatus': finalState,
-          'message': message,
-          'tip': tip,
-          'insightsMessage': message,
-          'insightsTip': tip,
-          'colour': _selectedColor ?? "Green",
-          'imageTimestamp': Timestamp.now(),
-          'lastSynced': Timestamp.now(),
-        });
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Image and wound status updated!"),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } else {
-        throw Exception("Image upload failed.");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Image uploaded successfully."),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -496,40 +460,6 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
         ),
       ],
     );
-  }
-
-  String _getWoundStateFromLevel(List<CalibrationLevel> levels, double level) {
-    if (levels.isEmpty) return 'Unknown';
-    for (int i = 0; i < levels.length; i++) {
-      if (level <= levels[i].cfu) return levels[i].healthState;
-    }
-    return levels.last.healthState;
-  }
-
-  String _getStatusMessage(String state) {
-    switch (state) {
-      case 'Healthy':
-        return 'Status: Your wound is healing well. Keep it up!';
-      case 'Monitor Needed':
-        return 'Status: Monitor your wound. Follow care instructions.';
-      case 'Unhealthy':
-        return 'Status: Wound condition is serious. Seek medical attention.';
-      default:
-        return 'Status: Unknown wound status.';
-    }
-  }
-
-  String _getTip(String state) {
-    switch (state) {
-      case 'Healthy':
-        return 'Tip: Keep the wound clean and covered to prevent infection.';
-      case 'Monitor Needed':
-        return 'Tip: Change bandages regularly and monitor for any changes.';
-      case 'Unhealthy':
-        return 'Tip: Contact your healthcare provider for professional treatment.';
-      default:
-        return 'Tip: No specific advice available.';
-    }
   }
 
   Color _getStateColor(String state) {

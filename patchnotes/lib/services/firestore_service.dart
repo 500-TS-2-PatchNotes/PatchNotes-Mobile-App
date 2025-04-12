@@ -107,7 +107,6 @@ class FirestoreService {
         .doc(uid)
         .collection('wound_data');
 
-    // Step 1: Get the 9 most recent wound documents (excluding 'info')
     final snapshot = await woundDataRef
         .where(FieldPath.documentId, isNotEqualTo: 'info')
         .orderBy('imageTimestamp', descending: true)
@@ -116,23 +115,17 @@ class FirestoreService {
 
     if (snapshot.docs.isEmpty) return;
 
-    // Step 2: Extract levels from the latest docs
     final levels = snapshot.docs
-        .map((doc) => doc.data()['level'])
-        .where((level) => level != null)
-        .cast<int>()
+        .map((doc) => (doc.data()['level'] as num?)?.toDouble())
+        .whereType<double>()
         .toList();
 
-    final latestLevel = levels.first;
-
-    // Step 3: Update the info doc
     final infoRef = woundDataRef.doc('info');
     await infoRef.set({
-      'currentLvl': latestLevel,
+      'currentLvl': levels.first,
       'recentLevels': levels,
       'lastSynced': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
-
   }
 
   /// DELETE

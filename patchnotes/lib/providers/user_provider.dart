@@ -122,10 +122,19 @@ class UserNotifier extends StateNotifier<UserState> {
       final latest = otherDocs.first.data();
 
       // Combine info + latest
-      final combined = {
-        ...?infoDoc?.data(),
-        ...latest, // latest overrides shared keys
-      };
+      final combined = {...latest};
+
+      if (infoDoc?.data() != null) {
+        final info = infoDoc!.data();
+        combined.addAll({
+          'currentLvl': info['currentLvl'],
+          'recentLevels': info['recentLevels'],
+          'insightsMessage': info['insightsMessage'],
+          'insightsTip': info['insightsTip'],
+          'woundImages': info['woundImages'],
+          'lastSynced': info['lastSynced'],
+        });
+      }
 
       final wound = Wound.fromMap(combined);
       state = state.copyWith(wound: wound);
@@ -133,33 +142,32 @@ class UserNotifier extends StateNotifier<UserState> {
   }
 
   Future<void> loadUserData() async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) {
-    state = state.copyWith(errorMessage: "No user logged in");
-    return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      state = state.copyWith(errorMessage: "No user logged in");
+      return;
+    }
+
+    state = state.copyWith(isLoading: true, uid: user.uid);
+
+    try {
+      final results = await Future.wait([
+        _firestoreService.getUser(user.uid),
+        _firestoreService.getAccountInfo(user.uid),
+        _firestoreService.getWound(user.uid),
+      ]);
+
+      state = state.copyWith(
+        appUser: results[0] as AppUser?,
+        account: results[1] as Account?,
+        wound: results[2] as Wound?,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+          errorMessage: "Error loading user data: $e", isLoading: false);
+    }
   }
-
-  state = state.copyWith(isLoading: true, uid: user.uid); 
-
-  try {
-    final results = await Future.wait([
-      _firestoreService.getUser(user.uid),
-      _firestoreService.getAccountInfo(user.uid),
-      _firestoreService.getWound(user.uid),
-    ]);
-
-    state = state.copyWith(
-      appUser: results[0] as AppUser?,
-      account: results[1] as Account?,
-      wound: results[2] as Wound?,
-      isLoading: false,
-    );
-  } catch (e) {
-    state = state.copyWith(
-        errorMessage: "Error loading user data: $e", isLoading: false);
-  }
-}
-
 
   Future<void> initializeNewUser(
       String uid, String fName, String lName, String email) async {

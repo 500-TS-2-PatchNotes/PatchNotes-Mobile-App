@@ -1,7 +1,11 @@
+import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:patchnotes/providers/calibration_provider.dart';
 import 'package:patchnotes/providers/navigation.dart';
 import 'package:patchnotes/providers/user_provider.dart';
+import 'package:patchnotes/utils/insights_helper.dart';
 import '../widgets/top_navbar.dart';
 
 class InsightsView extends ConsumerStatefulWidget {
@@ -12,53 +16,72 @@ class InsightsView extends ConsumerStatefulWidget {
 }
 
 class _InsightsViewState extends ConsumerState<InsightsView> {
+  final Map<int, bool> _showOverlayMap = {};
+
+  Stream<List<Map<String, dynamic>>> getWoundDataStream(String uid) {
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('wound_data')
+        .where(FieldPath.documentId, isNotEqualTo: 'info')
+        .orderBy('analyze_time', descending: true)
+        .limit(9)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  List<Map<String, dynamic>> recentDocs = [];
+  bool isLoading = true;
   bool _hasFetched = false;
 
   @override
   Widget build(BuildContext context) {
-    final currentTab = ref.watch(tabIndexProvider);
-
-    if (currentTab == 1 && !_hasFetched) {
-      _hasFetched = true;
-      Future.microtask(() {
-        ref.read(userProvider.notifier).loadUserData();
-      });
-    } else if (currentTab != 1) {
-      _hasFetched = false;
-    }
-
-    final userState = ref.watch(userProvider);
-    final wound = userState.wound;
-    final images = wound?.woundImages ?? [];
+    final uid = ref.watch(userProvider).uid;
+    final wound = ref.watch(userProvider).wound;
     final woundStatus = wound?.woundStatus ?? 'Unknown';
     final woundTip = wound?.insightsTip ?? 'No tip available.';
     final statusMessage = wound?.insightsMessage ?? 'Status unknown.';
 
     return Scaffold(
-      appBar: const Header(title: "Insights"),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildStatusContainer(
-                    statusMessage, woundStatus, Theme.of(context)),
-                const SizedBox(height: 20),
-                _buildSectionTitle(
-                    'Most Recent Wound Images', Theme.of(context)),
-                const SizedBox(height: 20),
-                _buildImageGrid(Theme.of(context), images),
-                const SizedBox(height: 24),
-                _buildTipContainer(woundTip, Theme.of(context)),
-                const SizedBox(height: 24),
-                _buildLastSyncedInfo(Theme.of(context)),
-              ],
-            ),
-          ),
-        ),
+      appBar: AppBar(
+        title: const Text("Insights"),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
+        centerTitle: true,
       ),
+      body: uid == null
+          ? const Center(child: Text("User not authenticated"))
+          : StreamBuilder<List<Map<String, dynamic>>>(
+              stream: getWoundDataStream(uid),
+              builder: (context, snapshot) {
+                final docs = snapshot.data ?? [];
+
+                return SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 20),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildStatusContainer(
+                              statusMessage, woundStatus, Theme.of(context)),
+                          const SizedBox(height: 20),
+                          _buildSectionTitle(
+                              'Most Recent Wound Images', Theme.of(context)),
+                          const SizedBox(height: 20),
+                          _buildImageGrid(Theme.of(context), docs),
+                          const SizedBox(height: 24),
+                          _buildTipContainer(woundTip, Theme.of(context)),
+                          const SizedBox(height: 24),
+                          _buildLastSyncedInfo(Theme.of(context)),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 
@@ -91,40 +114,53 @@ class _InsightsViewState extends ConsumerState<InsightsView> {
     );
   }
 
-  Widget _buildImageGrid(ThemeData theme, List<String> images) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: 9,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-          childAspectRatio: 1,
-        ),
-        itemBuilder: (context, index) {
-          if (index < images.length) {
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                images[index],
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
-              ),
-            );
-          } else {
-            return Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: theme.dividerColor),
-                borderRadius: BorderRadius.circular(8),
-                color: theme.cardColor,
-              ),
-            );
-          }
-        },
+  Widget _buildImageGrid(ThemeData theme, List<Map<String, dynamic>> docs) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: 9,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1,
       ),
+      itemBuilder: (context, index) {
+        final isToggled = _showOverlayMap[index] ?? false;
+        final doc = index < docs.length ? docs[index] : null;
+        final imageUrl = doc?['URL'];
+
+        return GestureDetector(
+          onTap: () => setState(() => _showOverlayMap[index] = !isToggled),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: imageUrl != null
+                      ? Image.network(imageUrl, fit: BoxFit.cover)
+                      : Container(color: theme.dividerColor),
+                ),
+              ),
+              if (isToggled && doc != null)
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.85),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: _buildOverlayInfo(theme, doc),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -162,6 +198,54 @@ class _InsightsViewState extends ConsumerState<InsightsView> {
     );
   }
 
+  Widget _buildOverlayInfo(ThemeData theme, Map<String, dynamic> doc) {
+    final calibration = ref.read(calibrationStreamProvider).value ?? [];
+    final level = (doc['level'] ?? 0.0).toDouble();
+    final estimatedCFU = estimateCFUFromLevel(calibration, level);
+    final state = getWoundStateFromCFU(calibration, estimatedCFU);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text("Lvl: ${level.toStringAsFixed(2)}",
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        Text("CFU: ${estimatedCFU.toStringAsExponential(1)}",
+            style: theme.textTheme.titleSmall),
+        Text("State: $state",
+            style: theme.textTheme.titleSmall
+                ?.copyWith(color: getStateColor(state))),
+      ],
+    );
+  }
+
+
+  Future<void> fetchRecentWoundData() async {
+    final uid = ref.read(userProvider).uid;
+    if (uid == null) return;
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('wound_data')
+        .where(FieldPath.documentId, isNotEqualTo: 'info')
+        .orderBy('imageTimestamp', descending: true)
+        .limit(9)
+        .get();
+
+    final docs = snapshot.docs.map((doc) => doc.data()).toList();
+
+    debugPrint("Fetched ${docs.length} wound_data docs:");
+    for (final doc in docs) {
+      debugPrint(" - ${doc['URL']} | Level: ${doc['level']}");
+    }
+
+    setState(() {
+      recentDocs = docs;
+      isLoading = false;
+    });
+  }
+
   Color _getStateBackgroundColor(String state) {
     switch (state) {
       case 'Healthy':
@@ -172,6 +256,17 @@ class _InsightsViewState extends ConsumerState<InsightsView> {
         return Colors.purple.withOpacity(0.2);
       default:
         return Colors.grey.withOpacity(0.2);
+    }
+  }
+
+  Color getStateColor(String state) {
+    switch (state) {
+      case 'Healthy':
+        return Colors.green;
+      case 'Critical':
+        return Colors.red;
+      default:
+        return Colors.orange;
     }
   }
 }
